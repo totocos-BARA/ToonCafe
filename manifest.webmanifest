@@ -1,0 +1,17 @@
+{
+  "name": "만화카페 비교",
+  "short_name": "만화카페",
+  "description": "만화카페 요금, 영업시간, 좌석과 분위기를 카드로 비교해요.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f7",
+  "theme_color": "#23508f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
