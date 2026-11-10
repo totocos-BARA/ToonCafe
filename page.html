@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: 헤더 → 둘이서 2시간 가격 막대 → 필터 → 매물 카드 그리드 (사진 · 가격표 · 좌석/분위기 · 장단점) */
+/* Layout: 헤더 → 둘이서 가격 막대(기준 전환) → 필터 → 매물 카드 그리드 (사진 · 가격표 · 좌석/분위기 · 장단점) */
 :root {
   --bg: #f3f4f7;
   --surface: #ffffff;
@@ -136,20 +136,23 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
   .pc { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+.chart-note { margin: 0; font-size: 13px; color: var(--muted); }
+.gallery:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 </style>
 
 <div class="wrap">
   <header>
     <div class="eyebrow">만화카페 8곳 · 종각 / 신촌·이대 / 홍대·망원</div>
     <h1>만화카페 비교</h1>
-    <p class="lede">찾아둔 만화카페 8곳을 매물 카드처럼 모았어요. 가격은 모두 1인 기준이고, 패키지는 기본 음료(아메리카노·아이스티 등) 한 잔이 포함된 값이에요. 둘이 데이트로 가면 아래 막대처럼 계산하면 돼요.</p>
+    <p class="lede">찾아둔 만화카페 8곳을 매물 카드처럼 모았어요. 가격은 1인 기준이고, 2026년 11월 10일 네이버 지도에 올라온 요금이에요. 2시간까지는 8곳이 모두 같은 값(음료 포함 9,500원)이라, 오래 있을수록 차이가 나요.</p>
   </header>
 
   <section class="chart" aria-labelledby="chart-h">
     <div class="chart-head">
-      <h2 id="chart-h">둘이서 2시간 + 음료</h2>
-      <p>2인 합계 · 빗금은 같은 브랜드 공통 요금으로 추정한 값</p>
+      <h2 id="chart-h">둘이서 가면 얼마</h2>
+      <div class="chips" id="plans" role="group" aria-label="비교 기준"></div>
     </div>
+    <p class="chart-note" id="plan-note"></p>
     <div class="rows" id="rows"></div>
   </section>
 
@@ -160,124 +163,142 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
       <div class="chips" role="group" aria-label="영업시간">
         <button class="chip" id="f-late" type="button" aria-pressed="false">24시간만</button>
       </div>
-      <label for="sort" style="display:flex;align-items:center;gap:6px;font-size:13px">정렬
-        <select id="sort">
-          <option value="p2">2시간 가격 낮은 순</option>
-          <option value="p1">1시간 가격 낮은 순</option>
-          <option value="list">찾아둔 순서</option>
-        </select>
-      </label>
     </div>
     <div class="grid" id="grid"></div>
   </section>
 
   <footer>
-    <span>출처: 다이닝코드, 당근 비즈프로필, 맘맘, polle, 개인 블로그 후기 (2024~2026년 글). 네이버 지도 링크는 이 페이지를 만들 때 열 수 없어서, 가격과 시간은 가기 전에 네이버 지도에서 한 번 더 확인하세요.</span>
-    <span>사진은 외부 사이트 사진을 이 페이지에 바로 붙일 수 없어서 비워 뒀어요. 각 카드의 "사진 넣기"로 네이버 지도에서 저장한 사진을 여러 장 넣을 수 있고, 넣은 사진은 이 브라우저에만 저장돼요.</span>
+    <span>출처: 네이버 지도 업체 정보와 방문자 리뷰 통계(2026년 11월 10일 확인), 블로그 후기. 요금과 영업시간은 바뀔 수 있으니 가기 전에 카드의 네이버 지도 링크로 확인하세요.</span>
+    <span>사진은 각 업체가 네이버 지도에 올린 사진이에요. 카드의 "사진 넣기"로 직접 찍은 사진도 더할 수 있고, 넣은 사진은 이 기기에만 저장돼요.</span>
+    <span>빗금 막대와 "추정"은 네이버에 그 요금제가 따로 적혀 있지 않아 벌툰 공통 요금으로 채운 값이에요.</span>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
-// 금액 단위: 원 (1인). p1 = 1시간(음료 없음), p2 = 2시간+음료. est = 같은 브랜드 공통 요금으로 추정.
+// build.py가 설치형 앱(index.html)에서는 true로 바꿔요. true면 네이버 사진 주소를 바로 불러오고, false면 함께 올린 photos/ 파일을 써요.
+const REMOTE_PHOTOS = false;
+const PICS = {
+  "1": [["photos/1-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20190322_9%2F1553224628669MJhGP_JPEG%2FXoYD5r86nWuChNCiXHiAF136.jpg"],["photos/1-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20190322_196%2F1553224644154xghTB_JPEG%2FjptYJaGg4VOf0E0A39ZRocce.jpg"],["photos/1-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20190322_217%2F15532246514130tV36_JPEG%2FunOw_y7sLyKTyloOkJaCvML4.jpg"],["photos/1-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20190322_163%2F1553224660858ESGT1_JPEG%2F8k7_X1dSsES2ieusomA78DcP.jpg"]],"2": [["photos/2-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251202_230%2F1764636123171zH4T2_JPEG%2FDSC04049.jpg"],["photos/2-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251202_174%2F1764636122573MAOMR_JPEG%2FDSC04044.jpg"],["photos/2-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261006_23%2F1791267763229Q6VkF_JPEG%2Fi_d8c399509b05.jpg"],["photos/2-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260921_243%2F1789966608410QqlpQ_JPEG%2Fi_b42b87bf282c.jpg"]],"3": [["photos/3-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260328_139%2F1774701175376zOLet_JPEG%2FIMG_5990.jpg"],["photos/3-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260328_264%2F1774701143446a2v1T_JPEG%2FIMG_5926.jpg"],["photos/3-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260328_274%2F1774701143695m5722_JPEG%2FIMG_5971.jpg"],["photos/3-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260325_80%2F1774431015784JCT5w_JPEG%2Fclean_2192_%25C0%25BD%25BD%25C4%25BB%25E7%25C1%25F8_%252840%2529.jpg"]],"4": [["photos/4-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260209_127%2F1770604455757U5Q2H_JPEG%2FIMG_2759.jpg"],["photos/4-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260209_276%2F1770604452318WBanL_JPEG%2F900%25A3%25DF1770111129505.jpg"],["photos/4-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260707_152%2F1783352519376E2Iut_JPEG%2F20260707_001413_%25281%2529.jpg"],["photos/4-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260209_245%2F17706044410062mwJ1_JPEG%2F900%25A3%25DF20260203%25A3%25DF120638.jpg"]],"5": [["photos/5-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20240529_120%2F1716937899065aBITu_JPEG%2F1000030676.jpg"],["photos/5-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20240529_154%2F17169379384454MFeP_JPEG%2F20240528_181741.jpg"],["photos/5-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20240529_175%2F1716937895265fLlSk_JPEG%2F1000030986.jpg"],["photos/5-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20240524_103%2F1716506337524tExQB_JPEG%2F1000029554.jpg"]],"6": [["photos/6-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260513_188%2F1778644406389aMDLp_JPEG%2F1.jpg"],["photos/6-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20221212_239%2F1670823766488mMA4A_JPEG%2F3B7C4B8A-AC7A-49C3-B424-D8DD8C166C4A.jpg"],["photos/6-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20221212_270%2F1670823766459VV34P_JPEG%2F7D9D9684-D011-48DB-BA69-686B677A2A7D.jpg"],["photos/6-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260513_52%2F1778644406350xWbDx_JPEG%2F2.jpg"]],"7": [["photos/7-2.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20250528_245%2F1748414526041vgv3k_JPEG%2F%25B8%25C5%25C0%25E5%25BB%25E7%25C1%25F8_4.jpg"],["photos/7-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251217_216%2F1765943084069CPDP8_JPEG%2F%25B4%25D9%25BF%25EE%25B7%25CE%25B5%25E5_%25281%2529.jpg"],["photos/7-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251004_73%2F17595614788163Ds3g_PNG%2F%25BF%25EC%25BF%25A1%25B0%25D4%25BD%25C5.png"],["photos/7-3.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20250919_59%2F1758264553068Uim84_PNG%2F4K_%25BA%25F6%25C7%25C1%25B7%25CE%25C1%25A7%25C5%25CD.png"]],"8": [["photos/8-1.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251106_239%2F1762392263600s5pU7_JPEG%2FIMG_0832.JPG"],["photos/8-4.jpg","https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20251207_2%2F17651082273026PmhH_PNG%2FIMG_2791.png"]]
+};
+// 금액 단위: 원 (1인). p2 = 2시간+음료, p5 = 5시간+음료, pall = 평일 종일(무제한). est = 네이버에 없어 브랜드 공통 요금으로 추정.
 const CAFES = [
   {
     id: 1, name: "벌툰 인더스트리얼 종각점", brand: "벌툰", area: "종각", concept: "INDUSTRIAL",
     addr: "서울 종로구 종로14길 9, 3층", station: "종각역 4번 출구 도보 5분", hours: "매일 10:00 – 23:00", close: 23, phone: "02-739-5367",
-    p1: 3600, p2: 9500,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["일벌 · 1시간 + 음료", 6000], ["꿀벌 · 2시간 + 음료", 9500, 1], ["땡벌 · 3시간 + 음료", 12500], ["말벌 · 5시간 + 음료", 19000], ["여왕벌 · 평일 무제한", 22000]],
-    seats: ["OTT룸", "다락방", "2–3인 룸", "굴방(커튼)", "단체룸"],
-    mood: "공장 같은 인더스트리얼 인테리어에 벽마다 유명 만화 명대사가 그려져 있어요. 방에는 매트리스, 쿠션 두 개, 작은 테이블이 있고 커튼으로 가려져요. 입구에 도서 검색대가 있고, 열혈강호·꽃보다 남자 같은 옛 명작부터 신간까지 많아요.",
-    pros: ["도서 검색대", "매장 안 화장실", "깔끔하고 친절", "근처 놀숲보다 메뉴 다양"],
+    p1: 3600, p2: 9500, p5: 19000, pall: 22000, reviews: 691,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "책 종류가 다양해요"],
+    fees: [["1시간", 3600], ["일벌 · 1시간 + 음료", 6000], ["꿀벌 · 2시간 + 음료", 9500], ["땡벌 · 3시간 + 음료", 12500], ["말벌 · 5시간 + 음료", 19000], ["여왕벌 · 무제한 (주말·공휴일 제외)", 22000]],
+    seats: ["벌집 구조 소굴방", "OTT룸", "다락방", "2–3인 룸", "단체룸"],
+    mood: "공장 같은 인더스트리얼 인테리어에 노란 벌집 모양 소굴방이 2층으로 늘어서 있어요. 방에는 매트리스와 쿠션, 작은 테이블이 있고 커튼으로 가려져요. 안마기와 보드게임이 무료고, 옛 명작부터 신간까지 책이 많아요.",
+    pros: ["도서 검색대", "매장 안 화장실", "안마기·보드게임 무료", "근처 놀숲보다 메뉴 다양"],
     cons: ["음식 맛은 보통이라는 평", "먹다 보면 돈이 많이 나감"],
-    url: "https://naver.me/FoENhPZ9", src: "https://www.diningcode.com/profile.php?rid=3F7P7jno25Tu",
+    url: "https://naver.me/FoENhPZ9",
   },
   {
     id: 2, name: "놀숲 이대점", brand: "놀숲", area: "신촌·이대", concept: "NOLSOOP",
-    addr: "서울 서대문구 이화여대길 75 이화타워 6층", station: "신촌역(경의중앙선) 도보 3분 · 이대역 10분", hours: "매일 10:00 – 23:00", close: 23, phone: "02-365-9200",
-    p1: 3600, p2: 9500,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["A세트 · 1시간 + 음료", 6500], ["B세트 · 2시간 + 음료", 9500, 1], ["C세트 · 3시간 + 음료", 12000], ["D세트 · 5시간 + 음료", 17000], ["온종일", 18000]],
-    seats: ["굴 자리(모니터·OTT)", "2층 다락", "좌식석", "1인석", "3인 이상 다락방", "닌텐도·PS석"],
-    mood: "앤티크하고 나무 느낌이 나는 분위기예요. 통창 옆 자리가 있고, 굴 자리마다 모니터가 달려 있어 OTT를 볼 수 있어요. 조용하고 깔끔하다는 후기가 많아요.",
-    pros: ["책 상태 좋고 많음", "도서 검색대", "담요·충전기·미니선풍기", "5시간·종일 요금이 저렴"],
-    cons: ["음식 종류가 벌툰보다 적음", "블로그 한 곳은 22시 마감이라고 적음"],
-    note: "기본 음료는 아메리카노, 아이스티, 초코바나나 중에 골라요.",
-    url: "https://naver.me/I55ql0ah", src: "https://www.diningcode.com/profile.php?rid=6iZZb1wOg6wc",
+    addr: "서울 서대문구 이화여대길 75 이화타워 6층", station: "신촌역(경의중앙선) 1번 출구 도보 3분", hours: "매일 10:00 – 23:00", close: 23, phone: "02-365-9200",
+    p1: 3600, p2: 9500, p5: 17000, pall: 18000, reviews: 1103,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "매장이 청결해요"],
+    fees: [["1시간 (10분당 600원 추가)", 3600], ["A세트 · 1시간 + 음료", 6500], ["B세트 · 2시간 + 음료", 9500], ["C세트 · 3시간 + 음료", 12000], ["D세트 · 5시간 + 음료", 17000], ["온종일", 18000], ["고등학생 이하 1시간 / 온종일", "3,000 / 15,000원"]],
+    seats: ["굴 자리(모니터·OTT)", "2층 다락", "좌식석", "1인석", "3인 이상 다락방", "PS5·닌텐도석"],
+    mood: "2022년에 리뉴얼한 앤티크하고 나무 느낌이 나는 곳이에요. 책이 2만여 권 있고, 넷플릭스와 PS5, 닌텐도 스위치, 레트로 게임기를 쓸 수 있어요. 조용하고 깔끔하다는 후기가 많아요.",
+    pros: ["5시간 요금이 8곳 중 가장 저렴", "온종일 18,000원에 이벤트 기간 제한 없음", "책 상태 좋고 많음", "담요·충전기·미니선풍기"],
+    cons: ["음식 종류가 벌툰보다 적음", "1시간 세트는 500원 비쌈"],
+    note: "기본 음료는 아메리카노, 아이스티, 초코바나나 중에 골라요. 네이버에 예약 가능으로 표시돼 있어요.",
+    url: "https://naver.me/I55ql0ah",
   },
   {
     id: 3, name: "캣툰 홍대점", brand: "캣툰", area: "홍대·망원", concept: "CATOON",
-    addr: "서울 마포구 어울마당로 74 금광빌딩 5층", station: "홍대입구역 도보 5분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1320-6361",
-    p1: 3600, p2: 9500,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["핑크젤리 · 1시간 + 음료", 6000], ["꾹꾹이 · 2시간 + 음료", 9500, 1], ["그루밍 · 3시간 + 음료", 12500], ["아깽이 · 5시간 + 음료", 19000], ["궁디팡팡 · 평일 종일", 22000]],
-    seats: ["룸(문패 걸고 사용)", "기차 콘셉트 좌석", "일반석"],
-    mood: "기차 콘셉트로 꾸민 곳이에요. 방을 고르면 문 앞에 문패를 걸어 두고, 나갈 때 카운터에 돌려줘요. 컬러링, 보드게임, 담요, 안마의자를 무료로 써요. 음식은 자리에서 주문하고 진동벨로 받아요.",
-    pros: ["담요·안마의자 무료", "보드게임·컬러링", "요금제 이름이 귀여움"],
+    addr: "서울 마포구 어울마당로 74, 5층", station: "상수역 1번 출구 도보 9분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1320-6361",
+    p1: 3600, p2: 9500, p5: 19000, pall: 22000, reviews: 586,
+    voted: ["책 읽기 쾌적해요", "매장이 청결해요", "음식이 맛있어요"],
+    fees: [["1시간 (10분당 600원 추가)", 3600], ["핑크젤리 · 1시간 + 음료", 6000], ["꾹꾹이 · 2시간 + 음료", 9500], ["그루밍 · 3시간 + 음료", 12500], ["아깽이 · 5시간 + 음료", 19000], ["궁디팡팡 · 평일 종일", 22000]],
+    seats: ["프라이빗 룸(문패)", "전 좌석 OTT", "기차 콘셉트 좌석"],
+    mood: "초록색 기차 칸처럼 꾸민 방이 줄지어 있어요. 방을 고르면 문 앞에 문패를 걸어 두고, 나갈 때 카운터에 돌려줘요. 모든 자리에서 넷플릭스·유튜브·티빙을 볼 수 있고 보드게임, 담요, 안마의자를 무료로 써요.",
+    pros: ["전 좌석 OTT", "청결하다는 리뷰가 많음", "담요·안마의자 무료", "보드게임·컬러링"],
     cons: ["예약 안 됨", "주말엔 웨이팅", "주차 불가"],
-    url: "https://naver.me/xQJrNDKp", src: "https://mom-mom.net/travel/places/69dc4c4e6093e0e47e45bff3",
+    url: "https://naver.me/xQJrNDKp",
   },
   {
-    id: 4, name: "애니툰", brand: "애니툰", area: "확인 필요", concept: "ANITOON",
-    addr: "주소 확인 필요", station: "확인 필요", hours: "24시간 영업", close: 24, allday: true,
-    p1: null, p2: null, missing: true,
+    id: 4, name: "애니툰", brand: "애니툰", area: "홍대·망원", concept: "ANITOON", allday: true,
+    addr: "서울 마포구 홍익로3길 44, 6층", station: "홍대입구역 9번 출구 도보 8분", hours: "24시간 · 연중무휴", close: 24, phone: "02-324-3533",
+    p1: 3600, p2: 9500, p5: 19000, pall: 15000, pallNote: "9–12월 평일 이벤트가, 평소 22,000원", reviews: 715,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "매장이 청결해요"],
+    fees: [["1시간 (10분당 600원 추가)", 3600], ["애니원 · 1시간 + 음료", 6000], ["애니투 · 2시간 + 음료", 9500], ["애니삼 · 3시간 + 음료", 12500], ["애니오 · 5시간 + 음료", 19000], ["애니야간 · 22시–08시 야간 무제한", 19000, 1], ["평일 무제한 이벤트 (9–12월)", 15000], ["애니왕 · 평일 10–24시", 22000]],
+    seats: ["2층 구조 캡슐룸", "전 좌석 OTT", "닌텐도 Wii·PS", "보드게임", "야외 테라스"],
+    mood: "8곳 중 유일하게 밤새 여는 곳이에요. 둥근 창이 난 방이 1·2층으로 쌓여 있고, 모든 자리에서 넷플릭스·티빙·유튜브·왓챠·라프텔을 볼 수 있어요. 만화와 웹툰이 3만여 권 있고 야외 테라스도 있어요. 짜계치(5,500원), 떡볶이(7,000원), 냉모밀(6,500원) 같은 식사 메뉴가 있어요.",
+    pros: ["24시간 영업", "야간 무제한 19,000원 (22시–08시)", "9–12월 평일 무제한 15,000원", "만화·웹툰 3만여 권"],
+    cons: ["네이버에 08–10시 브레이크타임 표시", "역에서 8분으로 조금 걸음"],
+    note: "야간 데이트라면 22시 이후 입장하는 애니야간 요금이 맞아요. 둘이서 38,000원이에요.",
     url: "https://naver.me/II4bAMhh",
   },
   {
     id: 5, name: "아키바코믹스", brand: "아키바코믹스", area: "홍대·망원", concept: "AKIBA",
-    addr: "서울 마포구 와우산로23길 8 (1층)", station: "홍대입구역 9번 출구 도보 3분", hours: "매일 10:00 – 23:00", close: 23,
-    p1: 3600, p2: 9500,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["오픈런 · 10–12시 입장, 음료 무료", 3600], ["일덕 · 1시간 + 음료", 6500], ["이덕 · 2시간 + 음료", 9500, 1], ["삼덕 · 3시간 + 음료", 12500], ["오덕 · 5시간 + 음료", 19000], ["평일 무제한 (학기 중 / 방학)", "15,000 / 22,000원"]],
-    seats: ["1층 누워 보는 자리", "2층 2인 공간", "빔프로젝터 굴방", "LP 청음 공간"],
-    mood: "일본 아키하바라 콘셉트예요. LP를 들을 수 있는 공간과 빔프로젝터가 있는 굴방이 있어요. 2024년에 생긴 곳이라 깨끗하고 넓어요. 나폴리탄(9,500원)이 대표 메뉴예요.",
-    pros: ["새로 생겨 깔끔하고 넓음", "LP 청음", "10–12시 오픈런 할인", "평일 무제한 15,000원"],
-    cons: ["2층 사다리가 가파름", "오픈 초기엔 책이 적었음"],
-    note: "주소가 출처마다 달라요(와우산로23길 8 / 양화로16길 29). 가기 전에 네이버 지도로 확인하세요.",
-    url: "https://naver.me/FqWti3x8", src: "https://polle.com/place/41BT2K",
+    addr: "서울 마포구 와우산로23길 8, 1층", station: "홍대입구역 9번 출구 도보 6분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1398-1177",
+    p1: 3600, p2: 9500, p5: 19000, pall: 15000, pallNote: "3–6월·9–12월 평일가, 방학 시즌 22,000원", reviews: 380,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "매장이 청결해요"],
+    fees: [["1시간 (10분당 600원 추가)", 3600], ["오픈런 · 10–12시 입장, 음료 무료", 3600], ["런치이용권 · 음식값만 내면 1시간 무료", "음식값"], ["일덕 · 1시간 + 음료", 6500], ["이덕 · 2시간 + 음료", 9500], ["삼덕 · 3시간 + 음료", 12500], ["오덕 · 5시간 + 음료", 19000], ["평일 무제한 (3–6월, 9–12월)", 15000], ["평일 무제한 (방학 시즌)", 22000]],
+    seats: ["객실 29개(전부 4K 빔)", "LP 청음석 16석", "1층 누워 보는 자리", "2층 2인 공간"],
+    mood: "일본 아키하바라 콘셉트예요. 객실 29개에 모두 4K 빔프로젝터와 넷플릭스가 있고, 방마다 티빙·라프텔·디즈니+ 중 하나를 더 볼 수 있어요. 만화 25,000권, LP 2,000장이 있고 애니 굿즈도 팔아요. 나폴리탄(9,500원)이 대표 메뉴예요.",
+    pros: ["전 객실 4K 빔프로젝터", "LP 청음", "평일 무제한 15,000원", "10–12시 오픈런 할인"],
+    cons: ["2층 사다리가 가파름", "1시간 세트는 500원 비쌈"],
+    url: "https://naver.me/FqWti3x8",
   },
   {
     id: 6, name: "벌툰 봉화당 망원역점", brand: "벌툰", area: "홍대·망원", concept: "BONGHWADANG",
-    addr: "서울 마포구 월드컵로 85, 3층", station: "망원역 2번 출구 도보 1분", hours: "매일 10:00 – 23:00", close: 23, phone: "02-332-4055",
-    p1: 3000, p2: 8500,
-    fees: [["1시간 (음료 별도)", 3000], ["1시간 + 음료", 5500], ["2시간 + 음료", 8500, 1], ["종일권 (음료 별도)", 18000]],
-    seats: ["개별 공간 좌석", "빔프로젝터 OTT", "닌텐도 자리"],
-    mood: "개별 공간 위주라 편하게 머물기 좋은 분위기예요. 보드게임, 닌텐도, 빔프로젝터 OTT, 발 마사지기를 무료로 써요. 떡볶이, 짜파게티, 볶음밥, 감자튀김이 많이 찾는 메뉴예요.",
-    pros: ["역에서 1분", "8곳 중 가장 저렴", "닌텐도·OTT·발마사지 무료"],
-    cons: ["요금제는 고른 뒤 못 바꿈", "주차 불가(망원시장 공영주차장 이용)"],
-    note: "가격이 다른 벌툰보다 낮게 적혀 있어요. 예전 요금일 수 있으니 확인하세요.",
-    url: "https://naver.me/GOPerHVE", src: "https://mom-mom.net/travel/places/6563ef4d467df1e41ea53b1e",
+    addr: "서울 마포구 월드컵로 85, 3층", station: "망원역 2번 출구 도보 1분", hours: "평일 11:00 – 23:00 · 주말 10:00 – 23:00", close: 23, phone: "0507-1374-4055",
+    p1: 3600, p2: 9500, p2est: true, p5: 19000, p5est: true, pall: 22000, reviews: 1403,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "매장이 청결해요"],
+    fees: [["1시간 (평일)", 3600], ["일벌 · 1시간 + 음료", 6000], ["꿀벌 · 2시간 + 음료 (추정)", 9500], ["말벌 · 5시간 + 음료 (추정)", 19000], ["여왕벌 · 종일 (주말·공휴일 제외)", 22000]],
+    seats: ["프라이빗 허니박스", "커플룸", "단체석", "닌텐도 스위치"],
+    mood: "고풍스러운 한옥풍 봉화당 콘셉트로, 주변에서 드물게 차분하고 아늑한 분위기예요. 프라이빗 룸에서 넷플릭스와 유튜브를 볼 수 있고 닌텐도 스위치, 보드게임, 발 마사지기를 무료로 써요.",
+    pros: ["역에서 1분", "방문자 리뷰 1,403개로 검증됨", "가성비 좋다는 리뷰가 많음", "커플룸"],
+    cons: ["평일은 11시에 엶", "주말엔 음료 포함 요금제만 가능", "건물 주차장이 좁음(망원시장 공영주차장 이용)"],
+    url: "https://naver.me/GOPerHVE",
   },
   {
     id: 7, name: "벌툰 엔틱 신촌직영점", brand: "벌툰", area: "신촌·이대", concept: "ANTIQUE",
-    addr: "서울 서대문구 연세로5가길 8-3, 4층", station: "신촌역 2번 출구 도보 5분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1482-3880",
-    p1: 3600, p2: 9500,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["일벌 · 1시간 + 음료", 6000], ["꿀벌 · 2시간 + 음료", 9500, 1], ["땡벌 · 3시간 + 음료", 12500], ["말벌 · 5시간 + 음료", 19000], ["여왕벌 · 평일 종일", 22000]],
-    seats: ["다락방", "허니박스(OTT 팔각방)", "닌텐도방", "릴렉스룸(이불)", "멀티박스방", "카페석"],
-    mood: "호텔처럼 고급스러운 엔틱 인테리어에 도심 속 공원 같은 여유를 콘셉트로 한 직영점이에요. 창문 있는 방이 많고, 신간 코너가 따로 있어요. 치약·치실·귀마개 같은 편의품을 무료로 빌려줘요.",
-    pros: ["방 종류가 가장 다양", "신간 코너", "창문 있는 방", "허니버터치킨 9,900원"],
+    addr: "서울 서대문구 연세로5가길 8-3, 4층", station: "신촌역 1번 출구 도보 4분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1482-3880",
+    p1: 3600, p2: 9500, p5: 19000, pall: 22000, reviews: 1870,
+    voted: ["책 읽기 쾌적해요", "놀거리가 많아요", "음식이 맛있어요"],
+    fees: [["1시간", 3600], ["일벌 · 1시간 + 음료", 6000], ["꿀벌 · 2시간 + 음료", 9500], ["땡벌 · 3시간 + 음료", 12500], ["말벌 · 5시간 + 음료", 19000], ["여왕벌 · 평일 종일", 22000]],
+    seats: ["커플룸", "다락방", "허니박스(4K 빔 OTT)", "닌텐도방", "릴렉스룸(이불)", "카페석"],
+    mood: "호텔처럼 고급스러운 엔틱 인테리어의 직영점이에요. 만화가 2만 권 넘게 있고 신간 코너가 따로 있어요. 감성 조명의 커플룸과 4K 빔프로젝터 허니박스가 있고, 치약·귀마개 같은 편의품을 무료로 빌려줘요.",
+    pros: ["방문자 리뷰 1,870개로 가장 많음", "방 종류가 다양", "신간 코너", "창문 있는 방"],
     cons: ["주말 웨이팅"],
-    url: "https://naver.me/xrSQ1z2p", src: "https://www.diningcode.com/profile.php?rid=eISHt9jMP5IH",
+    url: "https://naver.me/xrSQ1z2p",
   },
   {
     id: 8, name: "벌툰 몽유도원 이대점", brand: "벌툰", area: "신촌·이대", concept: "몽유도원",
-    addr: "서울 서대문구 이화여대길 59, 4층", station: "이대역 · 이대 정문 근처", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1473-0249",
-    p1: 3600, p2: 9500, p2est: true,
-    fees: [["1시간 (10분당 600원 추가)", 3600], ["패키지 · 1시간 + 음료", 6000], ["2시간 + 음료 (벌툰 공통, 추정)", 9500, 1], ["평일 종일권", 22000], ["청소년 1시간 / 종일", "3,000 / 18,000원"]],
-    seats: ["허니박스(OTT) 20개", "대청마루", "1·2층 방", "닌텐도·보드게임"],
-    mood: "한국 전통 건축 느낌으로 꾸민 큰 매장이에요. 방마다 모양이 다르고, 2층이 더 아늑하고 1층은 오가기 편해요. 당근에서 평점 4.9(후기 16개)예요.",
-    pros: ["넓고 깔끔", "OTT 허니박스가 많음", "친절, 가격 합리적이라는 후기", "청소년 요금 따로 있음"],
-    cons: ["2층은 오르내리기 불편"],
-    url: "https://naver.me/5HkHTeR3", src: "https://www.daangn.com/kr/local-profile/%EB%B2%8C%ED%88%B0-%EB%AA%BD%EC%9C%A0%EB%8F%84%EC%9B%90-%EC%9D%B4%EB%8C%80%EC%A0%90-d9kk86epfako/",
+    addr: "서울 서대문구 이화여대길 59, 4층", station: "이대역 3번 출구 도보 4분", hours: "매일 10:00 – 23:00", close: 23, phone: "0507-1473-0249",
+    p1: 3600, p2: 9500, p2est: true, p5: 19000, p5est: true, pall: 22000, reviews: 227,
+    voted: ["책 읽기 쾌적해요", "음식이 맛있어요", "친절해요"],
+    fees: [["1시간 (평일)", 3600], ["패키지 · 1시간 + 음료", 6000], ["2시간 + 음료 (추정)", 9500], ["5시간 + 음료 (추정)", 19000], ["평일 종일권", 22000], ["청소년 1시간 / 종일", "3,000 / 18,000원"]],
+    seats: ["허니박스(OTT 미니영화관)", "대청마루", "1·2층 방", "닌텐도 스위치"],
+    mood: "한국 전통 건축 느낌으로 꾸민 넓은 매장이에요. OTT 미니영화관인 허니박스, 닌텐도 스위치, 안마기, 보드게임을 무료로 써요. 방마다 모양이 다르고 2층이 더 아늑해요.",
+    pros: ["넓고 깔끔", "허니박스·닌텐도·안마기 무료", "음식이 맛있다는 리뷰가 많음", "청소년 요금 따로 있음"],
+    cons: ["2층은 오르내리기 불편", "네이버에 2시간 이상 요금이 안 적혀 있음"],
+    url: "https://naver.me/5HkHTeR3",
   },
 ];
+
+const PLANS = {
+  pall: { label: "평일 종일", note: "평일 무제한 요금 2인 합계예요. 애니툰과 아키바코믹스는 지금(9–12월) 이벤트가예요. 주말에는 대부분 종일권을 쓸 수 없어요.", max: 50000 },
+  p5: { label: "5시간 + 음료", note: "5시간 패키지 2인 합계예요. 주말에도 쓸 수 있어요.", max: 50000 },
+  p2: { label: "2시간 + 음료", note: "2시간 패키지 2인 합계예요. 8곳이 모두 같아요.", max: 50000 },
+};
 
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const won = (n) => (typeof n === "number" ? n.toLocaleString("ko-KR") + "원" : n);
-const STORE = "tooncafe-v1";
-const ui = { area: "전체", allday: false, sort: "p2" };
+const STORE = "tooncafe-v2";
+const ui = { area: "전체", allday: false, plan: "pall" };
 try { Object.assign(ui, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
+if (!PLANS[ui.plan]) ui.plan = "pall";
 const saveUi = () => { try { localStorage.setItem(STORE, JSON.stringify(ui)); } catch (e) {} };
 
-/* 사진: 카드마다 여러 장, 이 브라우저의 IndexedDB에만 저장 */
+/* 직접 넣은 사진: 카드마다 여러 장, 이 기기의 IndexedDB에만 저장 */
 const photos = new Map();
 let db = null;
 function openDb() {
@@ -326,7 +347,7 @@ async function addPhotos(cafe, files) {
     } catch (e) {}
   }
   render();
-  toast(ok ? `사진 ${ok}장을 넣었어요` : "사진을 넣지 못했어요. JPG나 PNG 파일인지 확인하세요");
+  toast(ok ? `사진 ${ok}장을 넣었어요. 네이버 사진 뒤에 붙어요` : "사진을 넣지 못했어요. JPG나 PNG 파일인지 확인하세요");
 }
 async function delPhoto(cafe, idx) {
   const list = photos.get(cafe) || [], p = list[idx];
@@ -335,90 +356,84 @@ async function delPhoto(cafe, idx) {
   URL.revokeObjectURL(p.url); list.splice(idx, 1); render(); toast("사진을 지웠어요");
 }
 let tt;
-function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 2400); }
+function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 2600); }
 
-function sorted(list) {
-  const key = ui.sort;
-  if (key === "list") return list;
-  return [...list].sort((a, b) => (a[key] ?? 1e9) - (b[key] ?? 1e9) || a.id - b.id);
-}
+const sorted = (list) => [...list].sort((a, b) => (a[ui.plan] ?? 1e9) - (b[ui.plan] ?? 1e9) || a.id - b.id);
+const isEst = (c) => !!c[ui.plan + "est"];
 
 function renderChart() {
-  const list = sorted(CAFES.filter((c) => true));
-  const max = 20000;
-  $("#rows").innerHTML = list.map((c) => {
-    const v = c.p2 != null ? c.p2 * 2 : null;
+  const plan = PLANS[ui.plan];
+  $("#plans").innerHTML = Object.entries(PLANS).map(([k, p]) => `<button class="chip" type="button" data-plan="${k}" aria-pressed="${ui.plan === k}">${p.label}</button>`).join("");
+  $("#plan-note").textContent = plan.note;
+  $("#rows").innerHTML = sorted(CAFES).map((c) => {
+    const v = c[ui.plan] * 2;
     return `<button class="row" type="button" data-go="${c.id}">
       <span class="name">${esc(c.name)}</span>
-      <span class="track">${v ? `<span class="fill${c.p2est ? " est" : ""}" style="width:${(v / max) * 100}%"></span>` : ""}</span>
-      <span class="amt num${v ? "" : " none"}">${v ? won(v) : "확인 필요"}</span>
+      <span class="track"><span class="fill${isEst(c) ? " est" : ""}" style="width:${(v / plan.max) * 100}%"></span></span>
+      <span class="amt num">${won(v)}</span>
     </button>`;
   }).join("");
 }
 
 function photoBlock(c) {
-  const list = photos.get(c.id) || [];
-  const badges = [c.allday ? `<span class="pill allday">24시간</span>` : `<span class="pill late">${c.close}시 마감</span>`, c.missing || c.note ? `<span class="pill check">확인 필요</span>` : ""].join("");
+  const biz = (PICS[c.id] || []).map((p) => ({ url: REMOTE_PHOTOS ? p[1] : p[0], biz: true }));
+  const mine = (photos.get(c.id) || []).map((p) => ({ url: p.url }));
+  const list = [...biz, ...mine];
+  const badges = c.allday ? `<span class="pill allday">24시간</span>` : `<span class="pill late">${c.close}시 마감</span>`;
   const inner = list.length
-    ? `<div class="gallery" data-gal="${c.id}">${list.map((p) => `<img src="${p.url}" alt="${esc(c.name)} 사진">`).join("")}</div><span class="count num" data-count="${c.id}">1 / ${list.length}</span>`
-    : `<div class="tone"><div><div class="big">${esc(c.concept)}</div><div class="small">${esc(c.brand)} · 사진은 네이버 지도에서 저장해 넣을 수 있어요</div></div></div>`;
+    ? `<div class="gallery" data-gal="${c.id}" tabindex="0" aria-label="${esc(c.name)} 사진 ${list.length}장">${list.map((p, i) => `<img src="${esc(p.url)}" alt="${esc(c.name)} 사진 ${i + 1}"${i ? ' loading="lazy"' : ""} referrerpolicy="no-referrer">`).join("")}</div><span class="count num" data-count="${c.id}">1 / ${list.length}</span>`
+    : `<div class="tone"><div><div class="big">${esc(c.concept)}</div><div class="small">${esc(c.brand)}</div></div></div>`;
   return `<div class="photo">${inner}<div class="badge">${badges}</div>
     <div class="tools">
-      ${list.length ? `<button class="btn" type="button" data-del="${c.id}">이 사진 지우기</button>` : ""}
+      ${mine.length ? `<button class="btn" type="button" data-del="${c.id}" data-biz="${biz.length}">이 사진 지우기</button>` : ""}
       <label class="btn">사진 넣기<input type="file" accept="image/*" multiple hidden data-add="${c.id}"></label>
     </div></div>`;
 }
 
 function card(c) {
-  if (c.missing) {
-    return `<article class="card" id="c${c.id}">${photoBlock(c)}<div class="body">
-      <div class="ttl"><h3>${esc(c.name)}</h3><div class="addr">${esc(c.hours)}</div></div>
-      <div class="missing">네이버 링크가 열리지 않았고, 인터넷 검색에서도 "애니툰"이라는 만화카페 정보를 찾지 못했어요. 네이버 지도에서 정확한 이름이나 주소를 알려주시면 다른 카드처럼 채워 넣을게요.</div>
-      <div class="links"><a class="link" href="${c.url}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a></div>
-    </div></article>`;
-  }
+  const plan = PLANS[ui.plan], v = c[ui.plan];
+  const sub = ui.plan === "pall" && c.pallNote ? c.pallNote : `1시간 ${won(c.p1)} · 2시간+음료 ${won(c.p2)}`;
   return `<article class="card" id="c${c.id}">${photoBlock(c)}<div class="body">
     <div class="ttl"><h3>${esc(c.name)}</h3><div class="addr">${esc(c.addr)}</div></div>
     <div class="tags"><span class="tag brand">${esc(c.brand)}</span><span class="tag">${esc(c.area)}</span>${c.seats.map((s) => `<span class="tag">${esc(s)}</span>`).join("")}</div>
-    <div class="price"><span class="kind">2시간 + 음료</span><span class="main num">${won(c.p2)}</span><span class="sub num">1시간 ${won(c.p1)} · 둘이서 ${won(c.p2 * 2)}${c.p2est ? " (추정)" : ""}</span></div>
+    <div class="price"><span class="kind">${plan.label}</span><span class="main num">${won(v)}</span><span class="sub num">둘이서 ${won(v * 2)}${isEst(c) ? " (추정)" : ""}</span></div>
+    <p class="note num">${esc(sub)}</p>
     <dl class="facts">
       <div><dt>영업</dt><dd>${esc(c.hours)}</dd></div>
       <div><dt>교통</dt><dd>${esc(c.station)}</dd></div>
-      ${c.phone ? `<div><dt>전화</dt><dd class="num">${esc(c.phone)}</dd></div>` : ""}
-      <div><dt>방·룸</dt><dd>${c.seats.length}종</dd></div>
+      <div><dt>전화</dt><dd class="num">${esc(c.phone)}</dd></div>
+      <div><dt>방문자 리뷰</dt><dd class="num">${c.reviews.toLocaleString("ko-KR")}개</dd></div>
     </dl>
     <div class="sec"><h4>요금표 (1인)</h4><table class="fees num"><tbody>${c.fees.map((f) => `<tr${f[2] ? ' class="hl"' : ""}><td>${esc(f[0])}</td><td>${esc(won(f[1]))}</td></tr>`).join("")}</tbody></table></div>
     <div class="sec"><h4>분위기 · 환경</h4><p>${esc(c.mood)}</p></div>
+    <div class="sec"><h4>네이버 방문자가 많이 고른 말</h4><div class="tags">${c.voted.map((s) => `<span class="tag">${esc(s)}</span>`).join("")}</div></div>
     <div class="pc">
       <ul class="pro"><li class="h">좋은 점</li>${c.pros.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
       <ul class="con"><li class="h">아쉬운 점</li>${c.cons.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
     </div>
     ${c.note ? `<p class="note">${esc(c.note)}</p>` : ""}
-    <div class="links"><a class="link" href="${c.url}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a><a class="link" style="color:var(--muted);font-weight:500" href="${c.src}" target="_blank" rel="noopener">정보 출처</a></div>
+    <div class="links"><a class="link" href="${c.url}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a></div>
   </div></article>`;
 }
 
-function renderFilters() {
+function render() {
   const areas = ["전체", "종각", "신촌·이대", "홍대·망원"];
   $("#areas").innerHTML = areas.map((a) => `<button class="chip" type="button" data-area="${a}" aria-pressed="${ui.area === a}">${a}</button>`).join("");
   $("#f-late").setAttribute("aria-pressed", String(ui.allday));
-  $("#sort").value = ui.sort;
-}
-
-function render() {
-  renderFilters();
   renderChart();
-  const list = sorted(CAFES.filter((c) => (ui.area === "전체" || c.area === ui.area || c.missing) && (!ui.allday || c.allday)));
+  const list = sorted(CAFES.filter((c) => (ui.area === "전체" || c.area === ui.area) && (!ui.allday || c.allday)));
   $("#grid").innerHTML = list.length ? list.map(card).join("") : `<div class="empty">조건에 맞는 카페가 없어요.</div>`;
   document.querySelectorAll("[data-gal]").forEach((g) => g.addEventListener("scroll", () => {
-    const id = +g.dataset.gal, i = Math.round(g.scrollLeft / g.clientWidth), n = (photos.get(id) || []).length;
-    const el = document.querySelector(`[data-count="${id}"]`); if (el) el.textContent = `${i + 1} / ${n}`;
+    const el = document.querySelector(`[data-count="${g.dataset.gal}"]`);
+    if (el) el.textContent = `${Math.round(g.scrollLeft / g.clientWidth) + 1} / ${g.children.length}`;
   }, { passive: true }));
 }
 
 document.addEventListener("click", (e) => {
   const a = e.target.closest("[data-area]");
   if (a) { ui.area = a.dataset.area; saveUi(); render(); return; }
+  const pl = e.target.closest("[data-plan]");
+  if (pl) { ui.plan = pl.dataset.plan; saveUi(); render(); return; }
   if (e.target.closest("#f-late")) { ui.allday = !ui.allday; saveUi(); render(); return; }
   const go = e.target.closest("[data-go]");
   if (go) {
@@ -432,13 +447,13 @@ document.addEventListener("click", (e) => {
   const d = e.target.closest("[data-del]");
   if (d) {
     const id = +d.dataset.del, g = document.querySelector(`[data-gal="${id}"]`);
-    const i = g ? Math.round(g.scrollLeft / g.clientWidth) : 0;
+    const i = (g ? Math.round(g.scrollLeft / g.clientWidth) : 0) - +d.dataset.biz;
+    if (i < 0) { toast("직접 넣은 사진만 지울 수 있어요. 옆으로 넘겨서 고르세요"); return; }
     if (d.dataset.armed) delPhoto(id, i);
     else { d.dataset.armed = "1"; d.textContent = "한 번 더 누르면 지워요"; setTimeout(() => { if (d.isConnected) { delete d.dataset.armed; d.textContent = "이 사진 지우기"; } }, 3000); }
   }
 });
 document.addEventListener("change", (e) => {
-  if (e.target.id === "sort") { ui.sort = e.target.value; saveUi(); render(); return; }
   const inp = e.target.closest("[data-add]");
   if (inp && inp.files.length) addPhotos(+inp.dataset.add, [...inp.files]);
 });
@@ -447,6 +462,6 @@ render();
 openDb().then(async (d) => {
   db = d;
   try { (await tx("readonly", (s) => s.getAll())).forEach(addToMap); } catch (e) {}
-  render();
+  if (photos.size) render();
 }).catch(() => {});
 </script>

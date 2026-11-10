@@ -32,5 +32,10 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
 </html>
 """
 
+# 설치형 앱은 네이버 사진 주소를 바로 불러와요 (사진 파일을 저장소에 두지 않아요).
+flag = "const REMOTE_PHOTOS = false;"
+assert flag in page, "page.html에 REMOTE_PHOTOS 표시가 없어요"
+page = page.replace(flag, "const REMOTE_PHOTOS = true;")
+
 (root / "index.html").write_text(HEAD + page + TAIL, encoding="utf-8")
 print("index.html 생성 완료")

@@ -15,4 +15,6 @@ GitHub Pages를 켠 뒤 `https://totocos-bara.github.io/ToonCafe/` 를 열어요
 2. `python3 build.py` 로 `index.html` 을 다시 만들어요.
 3. 아이콘을 바꾸려면 `tools/icon.html` 을 고친 뒤 `node tools/make-icons.js` 를 실행해요.
 
-카드에 넣은 사진은 그 기기의 브라우저(앱)에만 저장돼요.
+카페 정보와 사진 주소는 네이버 지도 업체 페이지에서 가져왔어요(2026-11-10 확인). 사진 파일은 저장소에 두지 않고 네이버 주소에서 바로 불러와요.
+
+카드에 직접 넣은 사진은 그 기기의 브라우저(앱)에만 저장돼요.
