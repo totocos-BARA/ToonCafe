@@ -1,6 +1,6 @@
 // 온라인이면 항상 최신 내용을 받고, 오프라인이면 마지막으로 받은 내용을 보여 줘요.
-const CACHE = "tooncafe-v3";
-const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
+const CACHE = "tooncafe-v4";
+const SHELL = ["./", "index.html", "bangeo.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
