@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""page.html(본문)을 설치형 웹앱용 index.html로 감싸요. 사용법: python3 build.py"""
+"""본문 조각(page.html, bangeo-page.html)을 설치형 웹앱용 전체 문서(index.html, bangeo.html)로 감싸요. 사용법: python3 build.py"""
 from pathlib import Path
 
 root = Path(__file__).parent
-page = (root / "page.html").read_text(encoding="utf-8")
 
 HEAD = """<!doctype html>
 <html lang="ko">
@@ -17,7 +16,7 @@ HEAD = """<!doctype html>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="만화카페">
+<meta name="apple-mobile-web-app-title" content="{app_title}">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 """
@@ -34,8 +33,10 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
 
 # 설치형 앱은 네이버 사진 주소를 바로 불러와요 (사진 파일을 저장소에 두지 않아요).
 flag = "const REMOTE_PHOTOS = false;"
-assert flag in page, "page.html에 REMOTE_PHOTOS 표시가 없어요"
-page = page.replace(flag, "const REMOTE_PHOTOS = true;")
-
-(root / "index.html").write_text(HEAD + page + TAIL, encoding="utf-8")
-print("index.html 생성 완료")
+PAGES = [("page.html", "index.html", "만화카페"), ("bangeo-page.html", "bangeo.html", "방어회")]
+for src, out, app_title in PAGES:
+    page = (root / src).read_text(encoding="utf-8")
+    assert flag in page, f"{src}에 REMOTE_PHOTOS 표시가 없어요"
+    page = page.replace(flag, "const REMOTE_PHOTOS = true;")
+    (root / out).write_text(HEAD.replace("{app_title}", app_title) + page + TAIL, encoding="utf-8")
+    print(f"{out} 생성 완료")

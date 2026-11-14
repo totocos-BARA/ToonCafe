@@ -1,0 +1,550 @@
+<title>방어회 비교</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: 헤더 → 이런 날엔 여기(종합 평가) → 둘이서 방어 가격 막대(기준 전환) → 필터 → 식당 카드 (사진 · 방어 메뉴표 · 영업시간 · 예약/웨이팅 · 평판 · 종합 평가) */
+:root {
+  --bg: #f2f5f7;
+  --surface: #ffffff;
+  --surface-2: #e9eef2;
+  --fg: #16202a;
+  --muted: #56636f;
+  --line: #d7dfe5;
+  --accent: #0d5c7d;
+  --accent-soft: #dcecf3;
+  --coral: #c2410c;
+  --coral-soft: #fde7dc;
+  --honey: #a35f00;
+  --honey-soft: #fcefd3;
+  --ok: #1d7a45;
+  --ok-soft: #dcf2e4;
+  --bad: #b8322a;
+  --bad-soft: #fbe2df;
+  --dot: rgba(22, 32, 42, .12);
+  --font-display: "Do Hyeon", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #17202a; --surface-2: #212c37; --fg: #e6edf2; --muted: #98a6b3; --line: #2c3a46;
+    --accent: #7cc4e4; --accent-soft: #163447; --coral: #ff9a6b; --coral-soft: #3d2116; --honey: #f0b44e; --honey-soft: #3a2b10;
+    --ok: #62d091; --ok-soft: #163625; --bad: #ff8a80; --bad-soft: #3d1b1a; --dot: rgba(230, 237, 242, .1); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #17202a; --surface-2: #212c37; --fg: #e6edf2; --muted: #98a6b3; --line: #2c3a46;
+  --accent: #7cc4e4; --accent-soft: #163447; --coral: #ff9a6b; --coral-soft: #3d2116; --honey: #f0b44e; --honey-soft: #3a2b10;
+  --ok: #62d091; --ok-soft: #163625; --bad: #ff8a80; --bad-soft: #3d1b1a; --dot: rgba(230, 237, 242, .1); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 26px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.lede { color: var(--muted); margin: 8px 0 0; max-width: 66ch; }
+.num { font-variant-numeric: tabular-nums; }
+.nav { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.nav:hover { text-decoration: underline; }
+
+/* 이런 날엔 여기 */
+.picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.pick { text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; display: grid; gap: 3px; }
+.pick:hover { border-color: var(--accent); }
+.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pick .when { font-size: 12px; font-weight: 700; color: var(--coral); }
+.pick .who { font-weight: 700; font-size: 15px; }
+.pick .why { font-size: 12.5px; color: var(--muted); }
+
+/* 가격 막대 */
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.chart-note { margin: 0; font-size: 13px; color: var(--muted); }
+.rows { display: grid; gap: 6px; }
+.row { display: grid; grid-template-columns: minmax(96px, 190px) 1fr 92px; gap: 10px; align-items: center; font-size: 13px; padding: 3px 6px; border-radius: 6px; cursor: pointer; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.row:hover { background: var(--surface-2); }
+.row:focus-visible { outline: 2px solid var(--accent); }
+.row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.track { height: 14px; background: var(--surface-2); border-radius: 4px; position: relative; }
+.fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--accent); }
+.fill.est { background: repeating-linear-gradient(45deg, var(--accent) 0 5px, var(--accent-soft) 5px 9px); }
+.row .amt { text-align: right; font-weight: 600; font-size: 13px; }
+.row .amt.none { color: var(--muted); font-weight: 500; }
+
+/* 필터 */
+.filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.chip:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 카드 */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; scroll-margin-top: 20px; min-width: 0; }
+.card.flash { outline: 3px solid var(--accent); }
+.photo { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; background: var(--surface-2); }
+.tone { position: absolute; inset: 0; background-image: radial-gradient(var(--dot) 1.2px, transparent 1.4px); background-size: 9px 9px; display: grid; place-items: center; text-align: center; padding: 12px; }
+.tone .big { font-family: var(--font-display); font-size: 2rem; line-height: 1.1; opacity: .8; }
+.gallery { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.gallery::-webkit-scrollbar { display: none; }
+.gallery:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.gallery img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
+.photo .badge { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.photo .count { position: absolute; top: 10px; right: 10px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: rgba(0, 0, 0, .55); color: #fff; }
+.photo .tools { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+.btn { font: inherit; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: var(--surface); color: var(--fg); }
+.pill.late { background: var(--accent); color: var(--surface); }
+.pill.early { background: var(--honey-soft); color: var(--honey); }
+.pill.wait { background: var(--bad-soft); color: var(--bad); }
+.body { padding: 14px 16px 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ttl h3 { font-size: 1.12rem; font-weight: 700; }
+.ttl .addr { font-size: 12.5px; color: var(--muted); }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font-size: 11.5px; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-weight: 500; }
+.tag.brand { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.tag .n { opacity: .75; margin-left: 3px; }
+.price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price .kind { font-size: 12px; font-weight: 700; color: var(--coral); }
+.price .main { font-size: 1.45rem; font-weight: 700; }
+.price .main.none { font-size: 1.15rem; color: var(--muted); }
+.price .sub { color: var(--muted); font-size: 13px; }
+table.fees { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.fees td { padding: 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.fees td:last-child { text-align: right; font-weight: 600; white-space: nowrap; padding-left: 10px; }
+table.fees tr.hl td { color: var(--coral); }
+table.fees tr.est td:last-child { color: var(--muted); font-weight: 500; }
+table.fees .d { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 13px; margin: 0; }
+.facts div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px; min-width: 0; }
+.facts dt { color: var(--muted); white-space: nowrap; }
+.facts dd { margin: 0; font-weight: 600; text-align: right; }
+.facts .wide { grid-column: 1 / -1; }
+.sec { display: grid; gap: 4px; }
+.sec h4 { margin: 0; font-size: 12px; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.sec p { margin: 0; font-size: 13.5px; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pc ul { margin: 0; padding: 8px 10px 8px 24px; border-radius: 10px; font-size: 13px; display: grid; gap: 2px; align-content: start; }
+.pc .pro { background: var(--ok-soft); }
+.pc .pro li::marker { color: var(--ok); }
+.pc .con { background: var(--bad-soft); }
+.pc .con li::marker { color: var(--bad); }
+.pc .h { font-weight: 700; font-size: 12px; list-style: none; margin-left: -14px; }
+.pc .pro .h { color: var(--ok); }
+.pc .con .h { color: var(--bad); }
+.verdict { border-left: 3px solid var(--coral); background: var(--coral-soft); padding: 9px 12px; border-radius: 0 10px 10px 0; font-size: 13.5px; }
+.verdict b { color: var(--coral); font-size: 12px; display: block; letter-spacing: .04em; }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+.links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.link { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+.toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 10px 16px; border-radius: 12px; background: var(--fg); color: var(--bg); font-size: 14px; font-weight: 600; max-width: calc(100% - 32px); }
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 92px 1fr 78px; gap: 6px; }
+  .pc { grid-template-columns: 1fr; }
+  .picks { grid-template-columns: 1fr 1fr; }
+  .pick { padding: 10px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">방어회 8곳 · 을지로 / 홍대·연남 / 합정·상수 / 망원</div>
+    <h1>방어회 비교</h1>
+    <p class="lede">찾아둔 방어회 집 8곳을 카드로 모았어요. 가격은 2026년 11월 14일 네이버 지도에 올라온 대방어 메뉴 기준이고, 평판은 네이버 방문자 리뷰 통계와 최근 후기를 정리했어요. 가게가 적지 않은 값은 지어내지 않고 <b>미확인</b>으로 두었어요.</p>
+    <a class="nav" href="https://totocos-bara.github.io/ToonCafe/">← 만화카페 비교 보기</a>
+  </header>
+
+  <section aria-labelledby="pick-h" style="display:grid;gap:12px">
+    <h2 id="pick-h">이런 데이트엔 여기</h2>
+    <div class="picks" id="picks"></div>
+  </section>
+
+  <section class="chart" aria-labelledby="chart-h">
+    <div class="chart-head">
+      <h2 id="chart-h">한눈에 비교</h2>
+      <div class="chips" id="plans" role="group" aria-label="비교 기준"></div>
+    </div>
+    <p class="chart-note" id="plan-note"></p>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section aria-labelledby="list-h" style="display:grid;gap:14px">
+    <div class="filters">
+      <h2 id="list-h" style="margin-right:auto">식당 상세</h2>
+      <div class="chips" id="areas" role="group" aria-label="지역"></div>
+      <div class="chips" role="group" aria-label="조건">
+        <button class="chip" id="f-late" type="button" aria-pressed="false">자정 넘어 영업</button>
+        <button class="chip" id="f-book" type="button" aria-pressed="false">네이버 예약</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>
+    <span>출처: 네이버 지도 업체 정보(메뉴, 영업시간, 편의시설)와 방문자 리뷰 통계, 네이버에 연결된 최근 블로그·방문자 후기(2026년 11월 14일 확인). 방어는 시세와 크기에 따라 값이 자주 바뀌니 가기 전에 카드의 네이버 지도 링크로 확인하세요.</span>
+    <span>빗금 막대와 회색 가격은 가게 메뉴판이 아니라 후기에 적힌 값이에요. 별점은 네이버가 공개한 곳만 적었어요.</span>
+    <span>사진은 각 업체가 네이버 지도에 올린 사진이에요. "사진 넣기"로 직접 찍은 사진을 더할 수 있고, 넣은 사진은 이 기기에만 저장돼요.</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+// build.py가 설치형 앱(bangeo.html)에서는 true로 바꿔요. true면 네이버 사진 주소를 바로 불러오고, false면 함께 올린 photos/ 파일을 써요.
+const REMOTE_PHOTOS = false;
+const PICS = {"1": [["photos/b1-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20220825_8%2F1661413578619Yk8yh_JPEG%2Fbatch_IMG_0988%25281%2529.JPG"], ["photos/b1-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fnaverbooking-phinf.pstatic.net%2F20261107_236%2F179402858689881yKf_PNG%2Fimage.png"]], "2": [["photos/b2-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261012_70%2F1791808495967jbHBV_JPEG%2FKakaoTalk_20261011_224225887.jpg"], ["photos/b2-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20250603_249%2F1748951467009F5lOr_PNG%2F%25BC%25F7%25BC%25BA%25C8%25B8%25B4%25EB.png"]], "3": [["photos/b3-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260521_57%2F1779374106833uGvQj_JPEG%2FIMG_1080.jpg"], ["photos/b3-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260628_73%2F1782573716200FVVuH_JPEG%2F%25BB%25FD%25B9%25E6%25BC%25DB%25C5%25F5%25B5%25A5%25C0%25CC.jpg"]], "4": [["photos/b4-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260912_134%2F17891487215918bqqc_JPEG%2F%25B9%25D9%25B4%25D9%25C1%25D6%25B8%25B7_%25C1%25A4%25B8%25E9.jpg"], ["photos/b4-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260911_247%2F1789061725993kIxQz_JPEG%2F%25BB%25E7%25BD%25C3%25B9%25CC.jpg"]], "5": [["photos/b5-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261104_1%2F17937657106401oL5b_JPEG%2F1000030302.jpg"]], "6": [["photos/b6-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260216_252%2F1771247929027APcXg_JPEG%2FIMG_0692.jpeg"], ["photos/b6-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260217_42%2F1771272643877tkyqn_JPEG%2FIMG_3738.jpeg"]], "7": [["photos/b7-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261024_171%2F1792773933431Mw4EC_JPEG%2F4284.jpg"], ["photos/b7-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260303_259%2F17725424067671PO4V_PNG%2F1000016787.png"]], "8": [["photos/b8-1.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261018_162%2F1792312166847mz5C2_JPEG%2F1000026930.jpg"], ["photos/b8-2.jpg", "https://search.pstatic.net/common/?autoRotate=true&type=w560_sharpen&src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20261018_45%2F1792312167301zUSoB_JPEG%2F1000026926.jpg"]]};
+
+const SHOPS = [
+  {
+    id: 1, name: "연남어부", area: "홍대·연남", kind: "생선회 · 수산시장식",
+    addr: "서울 마포구 동교로 220 1층", station: "홍대입구역 3번 출구 도보 3분", phone: "네이버 지도에서 연결",
+    hours: [["매일", "15:00 – 24:00"], ["라스트오더", "23:00"]], closeFri: 24, closeLabel: "24시 마감", late: false,
+    booking: true, reserve: "네이버 예약 · 캐치테이블",
+    wait: "금·토·공휴일 전날 웨이팅이 생기면 이용시간이 2시간 30분으로 제한돼요(매장 공지). 월요일에도 붐볐다는 후기가 있어요.",
+    min: 80000, minEst: true, minLabel: "대방어 소 (후기)", max: 120000, maxEst: true, maxLabel: "대방어 대 (후기)",
+    menu: [["대방어 소 / 중 / 대", "미확인", "est", "네이버 메뉴에 없음. 11월 4일 후기에 '소 8만 · 중 10만 · 대 12만원(기억)'이라 적혔지만 같은 글에 '중 80,000원'이라고도 해서 확실하지 않아요"], ["대방어+광어 / 대방어+연어", "미확인", "est", "매장 배너에만 있는 메뉴"], ["국민횟감 3종 한상", "58,000–70,000원"], ["광어 · 생연어 단품", 39000], ["해물라면 · 해물칼국수", 17000]],
+    reviews: 4014, blogs: 2229, rating: null,
+    voted: [["음식이 맛있어요", 3148], ["재료가 신선해요", 2559], ["친절해요", 1126], ["인테리어가 멋져요", 1079]],
+    mood: "1층 수조에서 횟감을 직접 고르고 먼저 결제한 뒤, 2층 '고래선박'이나 3층 '고래루프탑'으로 올라가 먹는 수산시장식이에요. 포차처럼 시끌벅적한 야장 분위기고, 대방어 한상에 백김치, 꼬시래기, 콘치즈, 김과 밥이 함께 나와요.",
+    pros: ["직접 보고 고르는 재미", "3층 루프탑 야장", "한상 곁들임이 푸짐하다는 후기", "역에서 3분"],
+    cons: ["대방어 값이 메뉴에 없음", "주말 이용시간 2시간 30분 제한", "시끄러운 편, 테이블이 작다는 후기", "주차 불가, 콜키지 유료"],
+    verdict: "구경하는 재미가 있는 활기찬 데이트에 맞아요. 조용히 대화하려면 다른 곳이 나아요. 가격은 가서 확인해야 해요.",
+    url: "https://naver.me/5IS9e8TM",
+  },
+  {
+    id: 2, name: "우기식당 바다 을지로점", area: "을지로", kind: "숙성회 · 한상차림",
+    addr: "서울 중구 충무로5길 18 1층", station: "을지로3가역 9번 출구 도보 1분", phone: "0507-1409-5754",
+    hours: [["월–목", "17:00 – 01:00"], ["금", "17:00 – 02:00"], ["토", "16:00 – 02:00"], ["일", "16:00 – 01:00"], ["라스트오더", "마감 1시간 전"]], closeFri: 26, closeLabel: "새벽 1–2시", late: true,
+    booking: true, reserve: "네이버 예약 · 테이블링 원격 줄서기(후기)",
+    wait: "예약을 놓쳐 테이블링으로 줄 서고 1시간쯤 기다렸다는 후기가 있어요. 5시쯤엔 한산하다가 금방 만석이 됐다는 후기도 있어요.",
+    min: 75000, minLabel: "제철 대방어 한상차림", max: null, maxLabel: "크기별 가격 미확인",
+    menu: [["제철 대방어 한상차림", 75000, "hl", "등살·뱃살·가마살 부위 설명, 참깨소스·쪽파·간장젤리 곁들임. 리뷰에 '소자'가 언급돼 크기가 나뉘는 듯하지만 가격은 미확인"], ["겨울 대방어반 숙성회반", 80000, "est", "블로그 후기에 적힌 메뉴(네이버 메뉴엔 없음)"], ["숙성회모듬 한상 (소부터)", 49000], ["제철 구룡포 과메기", 35000], ["날치알 꼬막비빔밥", 25000]],
+    reviews: 4559, blogs: 1998, rating: null,
+    voted: [["음식이 맛있어요", 4192], ["재료가 신선해요", 3100], ["인테리어가 멋져요", 1503], ["친절해요", 1283]],
+    mood: "8시간 이상 2도에서 저온 숙성한 도톰한 숙성회가 간판 메뉴예요. 직원이 부위와 먹는 법을 설명해 주고, 소주잔을 고르게 해 준다는 후기가 있어요. 함께 나오는 백김치가 특히 호평이에요.",
+    pros: ["새벽 1–2시까지 영업", "역에서 1분", "부위 설명이 친절", "과메기 등 제철 메뉴"],
+    cons: ["저녁 피크엔 1시간 대기 사례", "방어 크기별 가격 미확인", "주차는 공영주차장"],
+    verdict: "을지로 데이트 뒤 늦게까지 머물기 좋아요. 예약하거나 5시대에 일찍 가는 걸 권해요.",
+    url: "https://naver.me/G1wS1Df5",
+  },
+  {
+    id: 3, name: "힛토 을지로본점", area: "을지로", kind: "이자카야 · 숙성 사시미",
+    addr: "서울 중구 을지로12길 22 1층", station: "을지로3가역 10번 출구 도보 3분", phone: "0507-1389-8456",
+    hours: [["월–금", "11:00 – 23:00 (15–17시 브레이크)"], ["토", "16:30 – 01:00"], ["일", "15:30 – 23:00"]], closeFri: 23, closeLabel: "평일 23시 · 토 1시", late: true,
+    booking: true, reserve: "네이버 예약",
+    wait: "웨이팅이 있어 예약을 권한다는 후기가 있어요. 룸이 있다는 후기도 있어요.",
+    min: 85000, minLabel: "숙성 대방어 사시미 (최저)", max: 145000, maxLabel: "숙성 대방어 사시미 (최고)",
+    menu: [["숙성 대방어 사시미", "85,000–145,000원", "hl", "크기별 구분은 네이버에 없어요. 주문 때 확인 필요"], ["커플 Set", 85000, "", "사시미 2인 + 초밥 4p + 미니 가라아게 + 파스타. 방어 포함 여부 미확인"], ["활화산 숙성사시미 2인", 55000], ["우니 단새우 삼합 (5팀 한정)", 48000], ["사케 · 하이볼", "하이볼 9,000원부터"]],
+    reviews: 2824, blogs: 184, rating: null,
+    voted: [["음식이 맛있어요", 2630], ["재료가 신선해요", 1726], ["인테리어가 멋져요", 1329], ["매장이 넓어요", 883]],
+    mood: "일본식 이자카야예요. 사케가 30종 넘게 있고, 나베·파스타·튀김 같은 요리도 많아요. 룸이 있어 대화하기 좋았다는 후기가 있고, SBS 생방송투데이에 소개됐어요.",
+    pros: ["사케·하이볼이 다양", "방어 말고도 요리 선택지 많음", "룸 있음(후기)", "넓고 인테리어 평이 좋음"],
+    cons: ["평일·일요일 23시 마감", "대방어 사시미 값 폭이 커서 크기 확인 필요", "술까지 곁들이면 8곳 중 비싼 편"],
+    verdict: "분위기 있는 이자카야 데이트에 어울려요. 방어만 먹기보다 사케와 요리를 곁들일 때 진가가 나요.",
+    url: "https://naver.me/FoIrUoRS",
+  },
+  {
+    id: 4, name: "바다주막", area: "홍대·연남", kind: "요리주점 · 숙성회",
+    addr: "서울 마포구 월드컵북로4길 13", station: "홍대입구역 1번 출구 도보 5분", phone: "0507-1466-3228",
+    hours: [["월–목", "17:00 – 24:00"], ["금·토", "17:00 – 01:00"], ["일", "17:00 – 23:00"]], closeFri: 25, closeLabel: "금·토 1시", late: true,
+    booking: true, reserve: "네이버 예약 · 캐치테이블(후기)",
+    wait: "대기공간이 있어요. 웨이팅 시간에 대한 후기는 찾지 못했어요(미확인).",
+    min: 69000, minLabel: "숙성 대방어", max: 69000, maxLabel: "방어 메뉴는 한 가지",
+    menu: [["숙성 대방어", 69000, "hl", "'한겨울 전에도 기름이 찬 일산 양식 대방어만 쓴다'고 적혀 있어요. 양(몇 인분)은 미확인"], ["대방어 참깨폰즈", 32000, "hl"], ["오늘의 숙성회 (6–8종)", 45000], ["곤이 볶음", 24000], ["전복 게우 리조또", 24000]],
+    reviews: 800, blogs: 195, rating: 4.92,
+    voted: [["음식이 맛있어요", 762], ["대화하기 좋아요", 301], ["인테리어가 멋져요", 297], ["술이 다양해요", 225]],
+    mood: "숙성회와 요리를 내는 주점이에요. 방문자가 많이 고른 말 2위가 '대화하기 좋아요'이고, 테이블 간격이 넓어 여유롭다는 후기가 있어요. 사케, 전통주, 와인, 소주를 고루 갖췄어요.",
+    pros: ["대화하기 좋은 분위기", "방어 메뉴가 8곳 중 가장 저렴", "곤이볶음·리조또 등 요리 호평", "별점 4.92"],
+    cons: ["일요일 23시 마감", "방어 한 접시 양 미확인", "리뷰 수가 적은 편(800개)"],
+    verdict: "조용히 이야기 나누는 데이트에 가장 잘 맞아요. 방어 한 접시에 요리 하나 곁들이기 좋아요.",
+    url: "https://naver.me/Fm3KHR6N",
+  },
+  {
+    id: 5, name: "바다생고기", area: "홍대·연남", kind: "생선회",
+    addr: "서울 마포구 와우산로29나길 7 1층", station: "홍대입구역 7·8번 출구 도보 6분", phone: "02-6052-9098",
+    hours: [["매일", "16:00 – 04:00"]], closeFri: 28, closeLabel: "새벽 4시", late: true,
+    booking: true, reserve: "네이버 예약",
+    wait: "평일 저녁 예약이 됐다는 후기가 있어요. 방어가 떨어질 수 있어 전화로 남았는지 묻고 갔다는 후기도 있어요.",
+    min: 75000, minLabel: "대방어회 2인", max: 115000, maxLabel: "대방어회 4인",
+    menu: [["대방어회 2인", 75000, "hl"], ["대방어회 3인", 95000, "hl"], ["대방어회 4인", 115000, "hl"], ["소고기대창전골 (시그니처)", 20000], ["새우버터구이 10p", 18000]],
+    reviews: 1989, blogs: 362, rating: 4.91,
+    voted: [["음식이 맛있어요", 1835], ["재료가 신선해요", 1293], ["양이 많아요", 800], ["가성비가 좋아요", 355]],
+    mood: "셰프가 직접 나와 부위를 설명해 준다는 후기가 많아요. 두부김치, 콘치즈새우 같은 기본찬이 넉넉하게 깔리고, 방어를 두툼하게 썰어 줘요. 아늑한 분위기라는 평이에요.",
+    pros: ["새벽 4시까지, 8곳 중 가장 늦음", "인원별 가격이 분명함", "기본찬 푸짐, 가성비 키워드", "예약 가능"],
+    cons: ["역에서 6분, 골목 안쪽", "방어가 일찍 떨어질 수 있음", "노키즈존"],
+    verdict: "늦은 밤 2차로 방어를 먹기엔 1순위예요. 가격이 투명하고 반찬이 푸짐해요.",
+    url: "https://naver.me/GeWaH7lV",
+  },
+  {
+    id: 6, name: "숙성회 화도", area: "합정·상수", kind: "숙성회",
+    addr: "서울 마포구 독막로6길 5 1층", station: "상수역 1번 출구 도보 5분 · 합정역 7번 출구 300m", phone: "070-4887-1488",
+    hours: [["월–금", "17:00 – 24:00"], ["토·일", "16:00 – 24:00"], ["라스트오더", "23:00"]], closeFri: 24, closeLabel: "24시 마감", late: false,
+    booking: false, reserve: "캐치테이블 예약(후기) · 현장 웨이팅",
+    wait: "8곳 중 웨이팅이 가장 심해요. 주말 오후 2시 18분에 17번째로 걸고 저녁 7시 25분에 들어갔다는 후기, 웨이팅 7시간 뒤에 먹었다는 후기가 있어요. 캐치테이블은 일주일 전에 잡았다는 후기가 있어요.",
+    min: 79000, minLabel: "숙성 대방어", max: 79000, maxLabel: "방어 메뉴는 한 가지 값",
+    menu: [["숙성 대방어", 79000, "hl"], ["숙성 대방어 + 광어 또는 참돔 1/3", 79000, "hl", "그날 상태가 좋은 쪽으로 나와요"], ["홍게라면", 10000], ["모찌리도후", 8000], ["화도 하이볼 · 도쿠리", "6,000 · 12,000원"]],
+    reviews: 9935, blogs: 617, rating: 4.95,
+    voted: [["음식이 맛있어요", 9708], ["재료가 신선해요", 7549], ["친절해요", 3604], ["양이 많아요", 3376]],
+    mood: "두툼하게 썬 숙성회로 유명한 곳이에요. '회 3점을 한 번에 먹는 느낌'이라는 후기가 있고, 미니 갑오징어볶음과 모찌리도후도 인기예요. 화장실이 매장 안에 있어요.",
+    pros: ["리뷰 9,935개, 별점 4.95로 평판 1위", "두툼한 방어", "하이볼 6,000원 등 술값이 저렴", "매장 안 화장실"],
+    cons: ["웨이팅이 몇 시간씩", "네이버 예약 없음, 캐치테이블 경쟁", "24시 마감"],
+    verdict: "맛 평판은 8곳 중 최고예요. 다만 예약을 잡았거나 낮에 웨이팅을 걸어 두고 근처에서 놀 계획일 때만 권해요.",
+    url: "https://naver.me/GjZsz0uh",
+  },
+  {
+    id: 7, name: "바다회사랑 연남점", area: "홍대·연남", kind: "생선회",
+    addr: "서울 마포구 동교로27길 60", station: "홍대입구역 2번 출구 도보 8분", phone: "02-338-0872",
+    hours: [["화–일", "15:00 – 22:30"], ["라스트오더", "21:40"], ["월", "정기휴무"]], closeFri: 22.5, closeLabel: "22:30 · 월 휴무", late: false,
+    booking: false, reserve: "캐치테이블(후기) · 현장 웨이팅",
+    wait: "방어철엔 '웨이팅 지옥'이라 3시 오픈에 맞춰 가면 바로 들어간다는 후기가 있어요. 저녁 6시 반 이후엔 대기가 길어진다고 해요. 이용시간을 넘겼다고 나가 달라는 말을 들었다는 불만 후기도 있어요.",
+    min: 79000, minLabel: "대방어 + 생연어 (2–3인)", max: 85000, maxLabel: "대방어 (2–3인)",
+    menu: [["대방어 (2–3인)", 85000, "hl"], ["대방어 + 참돔 / 대광어 (2–3인)", 85000, "hl"], ["대방어 + 생연어 (2–3인)", 79000, "hl"], ["서더리 매운탕 (회 드신 분)", 8000], ["모둠멍게", 35000]],
+    reviews: 2323, blogs: 3872, rating: 4.38,
+    voted: [["음식이 맛있어요", 989], ["재료가 신선해요", 595], ["양이 많아요", 346], ["가성비가 좋아요", 141]],
+    mood: "연남동 대방어 하면 먼저 떠오른다는 곳으로, 블로그 후기가 8곳 중 가장 많아요. 활기차고 붐비는 분위기예요. 김에 막장, 마늘, 고추를 올려 먹는 조합을 추천하고, 날치알밥 무한리필이 좋았다는 후기가 있어요.",
+    pros: ["블로그 후기 3,872개로 가장 유명", "두툼한 썰기", "날치알밥 무한리필(후기)", "2–3인 기준 가격"],
+    cons: ["22:30 마감, 월요일 휴무", "웨이팅, 이용시간 제한 불만", "별점 4.38로 8곳 중 가장 낮음", "해물라면 비추 후기, 가격이 많이 올랐다는 후기"],
+    verdict: "이른 저녁(3시 오픈)에 가는 방어 맛집이에요. 늦은 밤 데이트 코스엔 맞지 않아요.",
+    url: "https://naver.me/5qRAP1Ia",
+  },
+  {
+    id: 8, name: "숙성회 파도", area: "망원", kind: "숙성회",
+    addr: "서울 마포구 월드컵로19길 31-1 1층", station: "망원역 2번 출구 도보 5분", phone: "네이버 지도에서 연결",
+    hours: [["월–토", "16:00 – 01:00"], ["일", "16:00 – 24:00"], ["라스트오더", "마감 1시간 전"]], closeFri: 25, closeLabel: "새벽 1시", late: true,
+    booking: true, reserve: "네이버 예약 · 전화 문의",
+    wait: "10월 중순 '오픈 2주 만에 주말 웨이팅'이라는 후기가 있고, 예약이 차서 그냥 온 손님이 돌아갔다는 후기도 있어요. 예약 못 했으면 전화로 자리를 물어보라는 후기가 있어요.",
+    min: 70000, minLabel: "숙성 대방어 (소)", max: 110000, maxLabel: "숙성 대방어 (대)",
+    menu: [["숙성 대방어 소", 70000, "hl"], ["숙성 대방어 중", 90000, "hl"], ["숙성 대방어 대", 110000, "hl"], ["대방어 + 광어 / 연어 반반", "소·중·대 같은 값", "hl"], ["모듬숙성회 소", 57000], ["1인 혼술 모듬회", 29000]],
+    reviews: 152, blogs: 3, rating: 5.0,
+    voted: [["음식이 맛있어요", 150], ["재료가 신선해요", 122], ["친절해요", 69], ["매장이 청결해요", 47]],
+    mood: "망원역과 망원시장 사이 카페거리 골목에 새로 연 숙성회집이에요. 첫 주문 때 초밥용 밥이 나오고 김과 백김치를 넉넉히 준다는 후기가 있어요. 홍게라면이 마무리로 인기고, 반려동물 동반이 돼요.",
+    pros: ["소·중·대 가격이 분명함", "새벽 1시까지", "초밥밥·김·백김치 제공", "반려동물 동반 가능"],
+    cons: ["연 지 얼마 안 돼 리뷰 152개뿐", "중자는 둘이 먹기 아쉬웠다는 후기", "주차 공간 없음"],
+    verdict: "가격 대비 만족도가 높은 신상이에요. 망원 데이트 끝에 늦게 들르기 좋아요.",
+    url: "https://naver.me/xbKUwtEN",
+  },
+];
+
+const PICKS = [
+  { id: 6, when: "기다려서라도 최고의 방어", why: "평판 1위. 캐치테이블 예약이나 낮 웨이팅 필수" },
+  { id: 5, when: "늦은 밤 2차", why: "새벽 4시까지. 2인 75,000원으로 값이 분명함" },
+  { id: 4, when: "조용히 대화하고 싶을 때", why: "'대화하기 좋아요'가 많이 꼽힘. 방어 69,000원" },
+  { id: 8, when: "가성비 + 늦게까지", why: "망원 신상. 소 70,000원, 새벽 1시까지" },
+  { id: 3, when: "을지로 이자카야 분위기", why: "사케와 요리, 룸. 대방어 85,000원부터" },
+];
+
+const PLANS = {
+  min: { label: "방어 최저 메뉴", note: "각 집에서 가장 싼 대방어 메뉴 값이에요. 집마다 양이 달라서(2인, 소자, 한 접시) 정확한 1:1 비교는 아니에요.", max: 150000 },
+  max: { label: "방어 최고 메뉴", note: "가장 큰 대방어 메뉴 값이에요. 메뉴가 한 가지뿐인 곳은 최저와 같고, 크기별 값을 확인하지 못한 곳은 미확인이에요.", max: 150000 },
+  close: { label: "금요일 마감", note: "금요일 밤 문 닫는 시간이에요. 막대가 길수록 늦게까지 열어요.", max: 28 },
+};
+
+const $ = (s) => document.querySelector(s);
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const won = (n) => (typeof n === "number" ? n.toLocaleString("ko-KR") + "원" : n);
+const hourLabel = (h) => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60), t = hh >= 24 ? "새벽 " + (hh - 24 || 12) + "시" : hh + "시"; return mm ? `${hh}:${String(mm).padStart(2, "0")}` : (hh === 24 ? "자정" : t); };
+const STORE = "bangeo-v1";
+const ui = { area: "전체", late: false, book: false, plan: "min" };
+try { Object.assign(ui, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
+if (!PLANS[ui.plan]) ui.plan = "min";
+const saveUi = () => { try { localStorage.setItem(STORE, JSON.stringify(ui)); } catch (e) {} };
+
+/* 직접 넣은 사진: 카드마다 여러 장, 이 기기의 IndexedDB에만 저장 */
+const photos = new Map();
+let db = null;
+function openDb() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error("no idb"));
+    const r = indexedDB.open("bangeo-photos", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("photos", { keyPath: "id" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function tx(mode, fn) {
+  return new Promise((res, rej) => {
+    const t = db.transaction("photos", mode), q = fn(t.objectStore("photos"));
+    t.oncomplete = () => res(q.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+function addToMap(rec) {
+  const list = photos.get(rec.shop) || [];
+  list.push({ id: rec.id, added: rec.added, url: URL.createObjectURL(rec.blob) });
+  list.sort((a, b) => a.added - b.added);
+  photos.set(rec.shop, list);
+}
+function shrink(file) {
+  return new Promise((res, rej) => {
+    const src = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1440 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(src);
+      c.toBlob((b) => (b ? res(b) : rej(new Error("blob"))), "image/jpeg", 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); rej(new Error("decode")); };
+    img.src = src;
+  });
+}
+async function addPhotos(shop, files) {
+  if (!db) { toast("이 브라우저에서는 사진을 저장할 수 없어요"); return; }
+  let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const rec = { id: shop + "-" + Date.now().toString(36) + "-" + i, shop, added: Date.now() + i / 1000, blob: await shrink(files[i]) };
+      await tx("readwrite", (s) => s.put(rec)); addToMap(rec); ok++;
+    } catch (e) {}
+  }
+  render();
+  toast(ok ? `사진 ${ok}장을 넣었어요. 네이버 사진 뒤에 붙어요` : "사진을 넣지 못했어요. JPG나 PNG 파일인지 확인하세요");
+}
+async function delPhoto(shop, idx) {
+  const list = photos.get(shop) || [], p = list[idx];
+  if (!p || !db) return;
+  try { await tx("readwrite", (s) => s.delete(p.id)); } catch (e) { toast("사진을 지우지 못했어요"); return; }
+  URL.revokeObjectURL(p.url); list.splice(idx, 1); render(); toast("사진을 지웠어요");
+}
+let tt;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 2600); }
+
+const val = (c) => (ui.plan === "close" ? c.closeFri : c[ui.plan]);
+const isEst = (c) => (ui.plan === "min" ? !!c.minEst : ui.plan === "max" ? !!c.maxEst : false);
+const sorted = (list) => [...list].sort((a, b) => {
+  const va = val(a), vb = val(b);
+  if (ui.plan === "close") return vb - va || a.id - b.id;
+  return (va ?? 1e9) - (vb ?? 1e9) || a.id - b.id;
+});
+
+function renderPicks() {
+  $("#picks").innerHTML = PICKS.map((p) => {
+    const c = SHOPS.find((s) => s.id === p.id);
+    return `<button class="pick" type="button" data-go="${c.id}"><span class="when">${esc(p.when)}</span><span class="who">${esc(c.name)}</span><span class="why">${esc(p.why)}</span></button>`;
+  }).join("");
+}
+
+function renderChart() {
+  const plan = PLANS[ui.plan];
+  $("#plans").innerHTML = Object.entries(PLANS).map(([k, p]) => `<button class="chip" type="button" data-plan="${k}" aria-pressed="${ui.plan === k}">${p.label}</button>`).join("");
+  $("#plan-note").textContent = plan.note;
+  $("#rows").innerHTML = sorted(SHOPS).map((c) => {
+    const v = val(c);
+    let w = 0, label;
+    if (ui.plan === "close") { w = ((v - 15) / (plan.max - 15)) * 100; label = hourLabel(v); }
+    else if (v != null) { w = (v / plan.max) * 100; label = won(v) + (isEst(c) ? "?" : ""); }
+    else label = "미확인";
+    return `<button class="row" type="button" data-go="${c.id}">
+      <span class="name">${esc(c.name)}</span>
+      <span class="track">${w ? `<span class="fill${isEst(c) ? " est" : ""}" style="width:${w}%"></span>` : ""}</span>
+      <span class="amt num${v == null ? " none" : ""}">${esc(label)}</span>
+    </button>`;
+  }).join("");
+}
+
+function photoBlock(c) {
+  const biz = (PICS[c.id] || []).map((p) => ({ url: REMOTE_PHOTOS ? p[1] : p[0] }));
+  const mine = (photos.get(c.id) || []).map((p) => ({ url: p.url }));
+  const list = [...biz, ...mine];
+  const badges = `<span class="pill ${c.late ? "late" : c.closeFri < 24 ? "early" : ""}">${esc(c.closeLabel)}</span>${c.booking ? "" : `<span class="pill wait">네이버 예약 없음</span>`}`;
+  const inner = list.length
+    ? `<div class="gallery" data-gal="${c.id}" tabindex="0" aria-label="${esc(c.name)} 사진 ${list.length}장">${list.map((p, i) => `<img src="${esc(p.url)}" alt="${esc(c.name)} 사진 ${i + 1}"${i ? ' loading="lazy"' : ""} referrerpolicy="no-referrer">`).join("")}</div><span class="count num" data-count="${c.id}">1 / ${list.length}</span>`
+    : `<div class="tone"><div class="big">${esc(c.name)}</div></div>`;
+  return `<div class="photo">${inner}<div class="badge">${badges}</div>
+    <div class="tools">
+      ${mine.length ? `<button class="btn" type="button" data-del="${c.id}" data-biz="${biz.length}">이 사진 지우기</button>` : ""}
+      <label class="btn">사진 넣기<input type="file" accept="image/*" multiple hidden data-add="${c.id}"></label>
+    </div></div>`;
+}
+
+function card(c) {
+  const priceMain = c.min != null ? `<span class="main num">${won(c.min)}${c.minEst ? "?" : ""}</span>` : `<span class="main none">미확인</span>`;
+  const range = c.max != null && c.max !== c.min ? `최고 ${won(c.max)}${c.maxEst ? "?" : ""} (${c.maxLabel})` : c.maxLabel;
+  return `<article class="card" id="c${c.id}">${photoBlock(c)}<div class="body">
+    <div class="ttl"><h3>${esc(c.name)}</h3><div class="addr">${esc(c.addr)}</div></div>
+    <div class="tags"><span class="tag brand">${esc(c.area)}</span><span class="tag">${esc(c.kind)}</span><span class="tag">${esc(c.reserve)}</span></div>
+    <div class="price"><span class="kind">${esc(c.minLabel)}</span>${priceMain}<span class="sub num">${esc(range)}</span></div>
+    ${c.minEst ? `<p class="note">"?"가 붙은 값은 메뉴판이 아니라 후기에 적힌 값이라 확실하지 않아요.</p>` : ""}
+    <dl class="facts">
+      <div class="wide"><dt>교통</dt><dd>${esc(c.station)}</dd></div>
+      <div><dt>전화</dt><dd class="num">${esc(c.phone)}</dd></div>
+      <div><dt>방문자 리뷰</dt><dd class="num">${c.reviews.toLocaleString("ko-KR")}개</dd></div>
+      <div><dt>별점</dt><dd class="num">${c.rating != null ? c.rating.toFixed(2) : "비공개"}</dd></div>
+    </dl>
+    <div class="sec"><h4>방어 메뉴 · 가격</h4><table class="fees num"><tbody>${c.menu.map((f) => `<tr class="${f[2] || ""}"><td>${esc(f[0])}${f[3] ? `<span class="d">${esc(f[3])}</span>` : ""}</td><td>${esc(won(f[1]))}</td></tr>`).join("")}</tbody></table></div>
+    <div class="sec"><h4>영업시간</h4><table class="fees num"><tbody>${c.hours.map((h) => `<tr><td>${esc(h[0])}</td><td>${esc(h[1])}</td></tr>`).join("")}</tbody></table></div>
+    <div class="sec"><h4>예약 · 웨이팅</h4><p>${esc(c.wait)}</p></div>
+    <div class="sec"><h4>분위기</h4><p>${esc(c.mood)}</p></div>
+    <div class="sec"><h4>네이버 방문자가 많이 고른 말</h4><div class="tags">${c.voted.map((s) => `<span class="tag">${esc(s[0])}<span class="n num">${s[1].toLocaleString("ko-KR")}</span></span>`).join("")}</div></div>
+    <div class="pc">
+      <ul class="pro"><li class="h">좋은 점</li>${c.pros.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+      <ul class="con"><li class="h">아쉬운 점</li>${c.cons.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+    </div>
+    <div class="verdict"><b>종합 평가</b>${esc(c.verdict)}</div>
+    <div class="links"><a class="link" href="${c.url}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a></div>
+  </div></article>`;
+}
+
+function render() {
+  const areas = ["전체", "을지로", "홍대·연남", "합정·상수", "망원"];
+  $("#areas").innerHTML = areas.map((a) => `<button class="chip" type="button" data-area="${a}" aria-pressed="${ui.area === a}">${a}</button>`).join("");
+  $("#f-late").setAttribute("aria-pressed", String(ui.late));
+  $("#f-book").setAttribute("aria-pressed", String(ui.book));
+  renderPicks();
+  renderChart();
+  const list = sorted(SHOPS.filter((c) => (ui.area === "전체" || c.area === ui.area) && (!ui.late || c.late) && (!ui.book || c.booking)));
+  $("#grid").innerHTML = list.length ? list.map(card).join("") : `<div class="empty">조건에 맞는 식당이 없어요.</div>`;
+  document.querySelectorAll("[data-gal]").forEach((g) => g.addEventListener("scroll", () => {
+    const el = document.querySelector(`[data-count="${g.dataset.gal}"]`);
+    if (el) el.textContent = `${Math.round(g.scrollLeft / g.clientWidth) + 1} / ${g.children.length}`;
+  }, { passive: true }));
+}
+
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-area]");
+  if (a) { ui.area = a.dataset.area; saveUi(); render(); return; }
+  const pl = e.target.closest("[data-plan]");
+  if (pl) { ui.plan = pl.dataset.plan; saveUi(); render(); return; }
+  if (e.target.closest("#f-late")) { ui.late = !ui.late; saveUi(); render(); return; }
+  if (e.target.closest("#f-book")) { ui.book = !ui.book; saveUi(); render(); return; }
+  const go = e.target.closest("[data-go]");
+  if (go) {
+    const id = +go.dataset.go;
+    if (!document.getElementById("c" + id)) { ui.area = "전체"; ui.late = false; ui.book = false; saveUi(); render(); }
+    const el = document.getElementById("c" + id);
+    el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400);
+    return;
+  }
+  const d = e.target.closest("[data-del]");
+  if (d) {
+    const id = +d.dataset.del, g = document.querySelector(`[data-gal="${id}"]`);
+    const i = (g ? Math.round(g.scrollLeft / g.clientWidth) : 0) - +d.dataset.biz;
+    if (i < 0) { toast("직접 넣은 사진만 지울 수 있어요. 옆으로 넘겨서 고르세요"); return; }
+    if (d.dataset.armed) delPhoto(id, i);
+    else { d.dataset.armed = "1"; d.textContent = "한 번 더 누르면 지워요"; setTimeout(() => { if (d.isConnected) { delete d.dataset.armed; d.textContent = "이 사진 지우기"; } }, 3000); }
+  }
+});
+document.addEventListener("change", (e) => {
+  const inp = e.target.closest("[data-add]");
+  if (inp && inp.files.length) addPhotos(+inp.dataset.add, [...inp.files]);
+});
+
+render();
+openDb().then(async (d) => {
+  db = d;
+  try { (await tx("readonly", (s) => s.getAll())).forEach(addToMap); } catch (e) {}
+  if (photos.size) render();
+}).catch(() => {});
+</script>
