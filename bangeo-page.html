@@ -73,7 +73,7 @@ h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; }
 .chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
 .chart-note { margin: 0; font-size: 13px; color: var(--muted); }
 .rows { display: grid; gap: 6px; }
-.row { display: grid; grid-template-columns: minmax(96px, 190px) 1fr 92px; gap: 10px; align-items: center; font-size: 13px; padding: 3px 6px; border-radius: 6px; cursor: pointer; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.row { display: grid; grid-template-columns: minmax(96px, 190px) 1fr minmax(92px, auto); gap: 10px; align-items: center; font-size: 13px; padding: 3px 6px; border-radius: 6px; cursor: pointer; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
 .row:hover { background: var(--surface-2); }
 .row:focus-visible { outline: 2px solid var(--accent); }
 .row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
@@ -154,9 +154,47 @@ table.fees .d { display: block; font-size: 11.5px; color: var(--muted); font-wei
 .empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
 footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
 .toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 10px 16px; border-radius: 12px; background: var(--fg); color: var(--bg); font-size: 14px; font-weight: 600; max-width: calc(100% - 32px); }
+/* 위치와 동선 지도 */
+.mapbox { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; }
+.map-wrap { position: relative; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.map-wrap svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
+.map-wrap .grid-line { stroke: var(--line); stroke-width: 1; }
+.map-wrap .stn rect { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+.map-wrap .stn text { fill: var(--muted); font-size: 11px; font-weight: 600; }
+.map-wrap .shop { cursor: pointer; }
+.map-wrap .shop .hit { fill: transparent; pointer-events: all; }
+.map-wrap .leader { stroke: var(--muted); stroke-width: 1; }
+.map-wrap .true-pos { fill: var(--muted); }
+.map-wrap .shop circle.dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.map-wrap .shop text.no { fill: var(--surface); font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.map-wrap .shop text.lb { fill: var(--fg); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--surface-2); stroke-width: 3px; stroke-linejoin: round; }
+.map-wrap .shop.a circle.dot { fill: var(--coral); }
+.map-wrap .shop.b circle.dot { fill: var(--honey); }
+.map-wrap .shop.dim { opacity: .45; }
+.map-wrap .shop:focus-visible circle.dot { stroke: var(--fg); stroke-width: 3; }
+.map-wrap .route { stroke: var(--coral); stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
+.map-wrap .route-lb { fill: var(--coral); font-size: 12px; font-weight: 700; paint-order: stroke; stroke: var(--surface-2); stroke-width: 4px; stroke-linejoin: round; }
+.map-wrap .scale line { stroke: var(--muted); stroke-width: 2; }
+.map-wrap .scale text { fill: var(--muted); font-size: 11px; }
+.map-wrap .north { fill: var(--muted); font-size: 11px; font-weight: 700; }
+.plan-box { display: grid; gap: 8px; font-size: 13.5px; }
+.plan-box .lead { margin: 0; }
+.plan-box .lead b.a { color: var(--coral); }
+.plan-box .lead b.b { color: var(--honey); }
+.near { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.near li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 8px; background: var(--surface-2); font-size: 13px; }
+.near li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.near li .meta { color: var(--muted); white-space: nowrap; }
+.near li.on { outline: 2px solid var(--honey); }
+.btn.sm { font-size: 12px; padding: 3px 8px; }
+.btn.go { background: var(--accent); border-color: var(--accent); color: var(--surface); text-decoration: none; display: inline-block; }
+.btn.go:hover { color: var(--surface); opacity: .9; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.nearby { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.nearby button { font: inherit; font-size: 12.5px; border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; }
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
-  .row { grid-template-columns: 92px 1fr 78px; gap: 6px; }
+  .row { grid-template-columns: 84px 1fr minmax(70px, auto); gap: 6px; }
   .pc { grid-template-columns: 1fr; }
   .picks { grid-template-columns: 1fr 1fr; }
   .pick { padding: 10px 12px; }
@@ -197,6 +235,16 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
     </div>
     <p class="chart-note" id="plan-note"></p>
     <div class="rows" id="rows"></div>
+  </section>
+
+  <section class="mapbox" aria-labelledby="map-h">
+    <div class="chart-head">
+      <h2 id="map-h">위치와 동선</h2>
+      <div class="chips" id="regions" role="group" aria-label="지도 지역"></div>
+    </div>
+    <p class="chart-note" id="region-note"></p>
+    <div class="map-wrap" id="map"></div>
+    <div class="plan-box" id="plan-box" aria-live="polite"></div>
   </section>
 
   <section aria-labelledby="list-h" style="display:grid;gap:14px">
@@ -451,6 +499,35 @@ const SHOPS = [
   },
 ];
 
+// 네이버 지도 좌표와 가장 가까운 역 출구까지 걷는 거리(네이버 기준). waitLv는 후기에 나온 웨이팅: 0 후기 없음, 1 있음, 2 1시간 이상, 3 몇 시간
+const GEO = {
+  1: { lat: 37.5596869, lng: 126.9239427, stn: "홍대입구역", exit: "3", walk: 3, meters: 220, waitLv: 1 },
+  2: { lat: 37.5653584, lng: 126.99181, stn: "을지로3가역", exit: "9", walk: 1, meters: 91, waitLv: 2 },
+  3: { lat: 37.56539, lng: 126.9909315, stn: "을지로3가역", exit: "10", walk: 3, meters: 186, waitLv: 1 },
+  4: { lat: 37.5571443, lng: 126.920587, stn: "홍대입구역", exit: "1", walk: 5, meters: 314, waitLv: 0 },
+  5: { lat: 37.5548142, lng: 126.9283675, stn: "홍대입구역", exit: "7", walk: 6, meters: 367, waitLv: 0 },
+  6: { lat: 37.5477136, lng: 126.9176495, stn: "상수역", exit: "1", walk: 5, meters: 355, waitLv: 3 },
+  7: { lat: 37.5604083, lng: 126.921, stn: "홍대입구역", exit: "2", walk: 8, meters: 539, waitLv: 2 },
+  8: { lat: 37.556036, lng: 126.9079578, stn: "망원역", exit: "2", walk: 5, meters: 303, waitLv: 1 },
+  9: { lat: 37.5696614, lng: 126.9867721, stn: "종각역", exit: "4", walk: 4, meters: 285, waitLv: 0 },
+  10: { lat: 37.5690821, lng: 126.9869944, stn: "종각역", exit: "4", walk: 5, meters: 378, waitLv: 1 },
+  11: { lat: 37.5692508, lng: 126.9845312, stn: "종각역", exit: "4", walk: 2, meters: 160, waitLv: 0 },
+  12: { lat: 37.5594586, lng: 126.9241705, stn: "홍대입구역", exit: "3", walk: 3, meters: 173, waitLv: 1 },
+  13: { lat: 37.548703, lng: 126.9195606, stn: "상수역", exit: "1", walk: 6, meters: 400, waitLv: 2 },
+  14: { lat: 37.5498862, lng: 126.9175491, stn: "합정역", exit: "3", walk: 5, meters: 326, waitLv: 2 },
+};
+SHOPS.forEach((s) => Object.assign(s, GEO[s.id], { region: s.area === "종각·종로" || s.area === "을지로" ? "jongno" : "mapo" }));
+const WAIT_LABEL = ["후기 없음", "있음", "1시간 이상", "몇 시간"];
+const STATIONS = [
+  { name: "홍대입구역", lat: 37.55702, lng: 126.92402, region: "mapo" },
+  { name: "합정역", lat: 37.54993, lng: 126.91452, region: "mapo" },
+  { name: "상수역", lat: 37.54777, lng: 126.92231, region: "mapo" },
+  { name: "망원역", lat: 37.55607, lng: 126.91011, region: "mapo" },
+  { name: "종각역", lat: 37.57018, lng: 126.9832, region: "jongno" },
+  { name: "을지로3가역", lat: 37.56634, lng: 126.99184, region: "jongno" },
+];
+const REGIONS = { mapo: "홍대·합정·망원", jongno: "종각·을지로" };
+
 const PICKS = [
   { id: 6, when: "기다려서라도 최고의 방어", why: "평판 1위. 캐치테이블 예약이나 낮 웨이팅 필수" },
   { id: 5, when: "늦은 밤 2차", why: "새벽 4시까지. 2인 75,000원으로 값이 분명함" },
@@ -462,9 +539,13 @@ const PICKS = [
 ];
 
 const PLANS = {
-  min: { label: "방어 최저 메뉴", note: "각 집에서 가장 싼 대방어 메뉴 값이에요. 집마다 양이 달라서(2인, 소자, 한 접시) 정확한 1:1 비교는 아니에요.", max: 150000 },
-  max: { label: "방어 최고 메뉴", note: "가장 큰 대방어 메뉴 값이에요. 메뉴가 한 가지뿐인 곳은 최저와 같고, 크기별 값을 확인하지 못한 곳은 미확인이에요.", max: 150000 },
-  close: { label: "금요일 마감", note: "금요일 밤 문 닫는 시간이에요. 막대가 길수록 늦게까지 열어요.", max: 29 },
+  min: { label: "방어 최저", note: "각 집에서 가장 싼 대방어 메뉴 값이에요. 집마다 양이 달라서(2인, 소자, 한 접시) 정확한 1:1 비교는 아니에요.", val: (c) => c.min, est: (c) => c.minEst, fmt: (v) => won(v), w: (v) => v / 150000, none: "미확인" },
+  max: { label: "방어 최고", note: "가장 큰 대방어 메뉴 값이에요. 메뉴가 한 가지뿐인 곳은 최저와 같고, 크기별 값을 확인하지 못한 곳은 미확인이에요.", val: (c) => c.max, est: (c) => c.maxEst, fmt: (v) => won(v), w: (v) => v / 150000, none: "미확인" },
+  close: { label: "금요일 마감", note: "금요일 밤 문 닫는 시간이에요. 막대가 길수록 늦게까지 열어요.", val: (c) => c.closeFri, fmt: (v) => hourLabel(v), w: (v) => (v - 15) / 14, desc: true },
+  rating: { label: "별점", note: "네이버 방문자 별점이에요. 차이가 작아서 막대는 4.0점부터 그렸어요. 별점을 공개하지 않은 곳은 비공개예요. 파도는 리뷰가 152개뿐이라 5.00이 나왔어요.", val: (c) => c.rating, fmt: (v) => v.toFixed(2), w: (v) => Math.max(0.03, v - 4), desc: true, none: "비공개" },
+  reviews: { label: "리뷰 수", note: "네이버 방문자 리뷰 수예요. 많을수록 많은 사람이 검증한 곳이에요. 카드에서 블로그 후기 수도 볼 수 있어요.", val: (c) => c.reviews, fmt: (v) => v.toLocaleString("ko-KR") + "개", w: (v) => v / 10000, desc: true },
+  wait: { label: "웨이팅", note: "후기에 나온 대기 시간으로 나눈 단계예요(몇 시간 / 1시간 이상 / 있음 / 후기 없음). 후기가 없다고 웨이팅이 없다는 뜻은 아니에요.", val: (c) => c.waitLv, fmt: (v) => WAIT_LABEL[v], w: (v) => v / 3 },
+  walk: { label: "역까지", note: "가장 가까운 지하철역 출구에서 걷는 거리예요(네이버 지도 기준). 카드에 역과 출구 번호가 있어요.", val: (c) => c.meters, fmt: (v, c) => `${c.walk}분 · ${v}m`, w: (v) => v / 600 },
 };
 
 const $ = (s) => document.querySelector(s);
@@ -472,7 +553,7 @@ const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&":
 const won = (n) => (typeof n === "number" ? n.toLocaleString("ko-KR") + "원" : n);
 const hourLabel = (h) => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60), pad = String(mm).padStart(2, "0"); if (h === 24) return "자정"; if (hh >= 24) return mm ? `새벽 ${hh - 24}:${pad}` : `새벽 ${hh - 24}시`; return mm ? `${hh}:${pad}` : `${hh}시`; };
 const STORE = "bangeo-v1";
-const ui = { area: "전체", late: false, book: false, plan: "min" };
+const ui = { area: "전체", late: false, book: false, plan: "min", region: "mapo" };
 try { Object.assign(ui, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) {}
 if (!PLANS[ui.plan]) ui.plan = "min";
 const saveUi = () => { try { localStorage.setItem(STORE, JSON.stringify(ui)); } catch (e) {} };
@@ -537,12 +618,150 @@ async function delPhoto(shop, idx) {
 let tt;
 function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 2600); }
 
-const val = (c) => (ui.plan === "close" ? c.closeFri : c[ui.plan]);
-const isEst = (c) => (ui.plan === "min" ? !!c.minEst : ui.plan === "max" ? !!c.maxEst : false);
+const val = (c) => PLANS[ui.plan].val(c);
+const isEst = (c) => !!(PLANS[ui.plan].est && PLANS[ui.plan].est(c));
 const sorted = (list) => [...list].sort((a, b) => {
   const va = val(a), vb = val(b);
-  if (ui.plan === "close") return vb - va || a.id - b.id;
-  return (va ?? 1e9) - (vb ?? 1e9) || a.id - b.id;
+  if (va == null || vb == null) return (va == null) - (vb == null) || a.id - b.id;
+  return (PLANS[ui.plan].desc ? vb - va : va - vb) || a.id - b.id;
+});
+
+/* 위치와 동선: 좌표를 평면으로 펴서 SVG로 그려요(지도 타일 없이). 점을 누르면 출발/도착으로 정해 거리와 길찾기를 보여 줘요. */
+const route = { a: null, b: null };
+const RAD = Math.PI / 180;
+function dist(p, q) {
+  const dLat = (q.lat - p.lat) * RAD, dLng = (q.lng - p.lng) * RAD;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(p.lat * RAD) * Math.cos(q.lat * RAD) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
+const distLabel = (d) => (d < 1000 ? `${Math.round(d / 10) * 10}m` : `${(d / 1000).toFixed(1)}km`);
+const walkMin = (d) => Math.max(1, Math.round((d * 1.3) / 70));
+const nearest = (c, n) => SHOPS.filter((s) => s.id !== c.id).map((s) => ({ s, d: dist(c, s) })).sort((x, y) => x.d - y.d).slice(0, n);
+const byId = (id) => SHOPS.find((s) => s.id === id);
+const kakaoWalk = (a, b) => `https://map.kakao.com/link/by/walk/${encodeURIComponent(a.name)},${a.lat},${a.lng}/${encodeURIComponent(b.name)},${b.lat},${b.lng}`;
+
+function renderMap() {
+  const box = $("#map");
+  if (!box) return;
+  const region = ui.region === "jongno" ? "jongno" : "mapo";
+  $("#regions").innerHTML = Object.entries(REGIONS).map(([k, v]) => `<button class="chip" type="button" data-region="${k}" aria-pressed="${region === k}">${v} ${SHOPS.filter((s) => s.region === k).length}곳</button>`).join("");
+  const shops = SHOPS.filter((s) => s.region === region), stns = STATIONS.filter((s) => s.region === region);
+  const other = SHOPS.filter((s) => s.region !== region);
+  const cen = (l) => ({ lat: l.reduce((a, s) => a + s.lat, 0) / l.length, lng: l.reduce((a, s) => a + s.lng, 0) / l.length });
+  $("#region-note").textContent = `점을 누르면 출발지, 하나 더 누르면 도착지가 돼요. ${REGIONS.mapo}과 ${REGIONS.jongno}은 직선으로 약 ${distLabel(dist(cen(shops), cen(other)))} 떨어져 있어서 지도를 나눴어요.`;
+
+  // 위경도 → 미터 평면
+  const pts = [...shops, ...stns];
+  const lat0 = pts.reduce((a, s) => a + s.lat, 0) / pts.length;
+  const kx = Math.cos(lat0 * RAD) * 111320, ky = 110574;
+  const xs = pts.map((s) => s.lng * kx), ys = pts.map((s) => -s.lat * ky);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const W = Math.max(280, Math.round(box.clientWidth || 600));
+  const padX = W < 420 ? 48 : 70, padY = 30;
+  const spanX = Math.max(maxX - minX, 200), spanY = Math.max(maxY - minY, 150);
+  const sc = Math.min((W - padX * 2) / spanX, (Math.min(W * 1.15, 540) - padY * 2) / spanY);
+  const H = Math.round(spanY * sc + padY * 2);
+  const ox = (W - spanX * sc) / 2 - (minX - (spanX - (maxX - minX)) / 2) * sc;
+  const oy = padY - (minY - (spanY - (maxY - minY)) / 2) * sc;
+  const P0 = (s) => [s.lng * kx * sc + ox, -s.lat * ky * sc + oy];
+  // 거의 붙어 있는 집은 점이 겹치지 않게 살짝 벌려 그림 (실제 자리는 작은 점과 선으로 표시)
+  const pos = new Map(shops.map((s) => [s.id, P0(s)]));
+  for (let k = 0; k < 30; k++) {
+    let moved = false;
+    for (let i = 0; i < shops.length; i++) for (let j = i + 1; j < shops.length; j++) {
+      const a = pos.get(shops[i].id), b = pos.get(shops[j].id);
+      let dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy);
+      if (d >= 21) continue;
+      if (d < 0.01) { dx = 1; dy = 0; d = 1; }
+      const push = (21 - d) / 2;
+      a[0] -= dx / d * push; a[1] -= dy / d * push; b[0] += dx / d * push; b[1] += dy / d * push; moved = true;
+    }
+    if (!moved) break;
+  }
+  const P = (s) => pos.get(s.id) || P0(s);
+
+  // 라벨 겹침 피하기: 먼저 놓인 상자와 겹치지 않는 자리를 고름
+  const boxes = [];
+  const out = (r) => r.x < 2 || r.x + r.w > W - 2 || r.y < 2 || r.y + r.h > H - 2;
+  const overlap = (r) => boxes.reduce((a, b) => a + Math.max(0, Math.min(r.x + r.w, b.x + b.w) - Math.max(r.x, b.x)) * Math.max(0, Math.min(r.y + r.h, b.y + b.h) - Math.max(r.y, b.y)), 0);
+  const hit = (r) => out(r) || overlap(r) > 0;
+  const place = (x, y, w, h, gap) => {
+    const cands = [[x + gap, y - h / 2], [x - gap - w, y - h / 2], [x - w / 2, y - gap - h], [x - w / 2, y + gap], [x + gap, y - h - 2], [x + gap, y + 2], [x - gap - w, y - h - 2], [x - gap - w, y + 2]];
+    for (const [cx, cy] of cands) { const r = { x: cx, y: cy, w, h }; if (!hit(r)) { boxes.push(r); return r; } }
+    const best = cands.map(([cx, cy]) => ({ x: cx, y: cy, w, h })).map((r) => ({ r, c: (out(r) ? 1e6 : 0) + overlap(r) })).sort((a, b) => a.c - b.c)[0].r;
+    boxes.push(best); return best;
+  };
+  const textW = (s, size) => [...s].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? size * 1.0 : size * 0.6), 0);
+
+  shops.forEach((s) => { const [x, y] = P(s); boxes.push({ x: x - 10, y: y - 10, w: 20, h: 20 }); });
+  stns.forEach((s) => { const [x, y] = P(s); boxes.push({ x: x - 7, y: y - 7, w: 14, h: 14 }); });
+
+  // 축척 막대
+  const steps = [100, 200, 250, 500, 1000];
+  const m = steps.find((v) => v * sc >= 60) || 1000;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${REGIONS[region]} 방어회 집 위치 지도">`;
+  for (let gx = 0; gx <= W; gx += Math.max(40, Math.round(m * sc))) svg += `<line class="grid-line" x1="${gx}" y1="0" x2="${gx}" y2="${H}"/>`;
+  for (let gy = 0; gy <= H; gy += Math.max(40, Math.round(m * sc))) svg += `<line class="grid-line" x1="0" y1="${gy}" x2="${W}" y2="${gy}"/>`;
+
+  // 동선 선
+  const A = route.a && byId(route.a), B = route.b && byId(route.b);
+  if (A && B && A.region === region && B.region === region) {
+    const [x1, y1] = P(A), [x2, y2] = P(B), d = dist(A, B);
+    svg += `<line class="route" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    const lb = `${distLabel(d)} · 약 ${walkMin(d)}분`, lw = textW(lb, 12);
+    svg += `<text class="route-lb" x="${(x1 + x2) / 2 - lw / 2}" y="${(y1 + y2) / 2 - 8}">${lb}</text>`;
+    boxes.push({ x: (x1 + x2) / 2 - lw / 2, y: (y1 + y2) / 2 - 22, w: lw, h: 16 });
+  }
+
+  stns.forEach((s) => {
+    const [x, y] = P(s), w = textW(s.name, 11), r = place(x, y, w, 13, 10);
+    svg += `<g class="stn"><rect x="${x - 6}" y="${y - 6}" width="12" height="12" rx="3"/><text x="${r.x}" y="${r.y + 10}">${esc(s.name)}</text></g>`;
+  });
+  shops.forEach((s) => {
+    const [x, y] = P(s), name = s.short || s.name, w = textW(name, 12), r = place(x, y, w, 15, 13);
+    const cls = route.a === s.id ? " a" : route.b === s.id ? " b" : "";
+    const dim = ui.late && !s.late ? " dim" : "";
+    const [tx, ty] = P0(s), moved = Math.hypot(tx - x, ty - y) > 3;
+    if (moved) svg += `<line class="leader" x1="${tx}" y1="${ty}" x2="${x}" y2="${y}"/><circle class="true-pos" cx="${tx}" cy="${ty}" r="2"/>`;
+    svg += `<g class="shop${cls}${dim}" data-pick="${s.id}" tabindex="0" role="button" aria-label="${esc(s.name)}, ${esc(s.closeLabel)}"><circle class="hit" cx="${x}" cy="${y}" r="16"/><rect class="hit" x="${r.x - 2}" y="${r.y}" width="${w + 4}" height="15"/><circle class="dot" cx="${x}" cy="${y}" r="9"/><text class="no" x="${x}" y="${y}">${s.id}</text><text class="lb" x="${r.x}" y="${r.y + 12}">${esc(name)}</text></g>`;
+  });
+  const sx = 14, sy = H - 14;
+  svg += `<g class="scale"><line x1="${sx}" y1="${sy}" x2="${sx + m * sc}" y2="${sy}"/><line x1="${sx}" y1="${sy - 4}" x2="${sx}" y2="${sy + 1}"/><line x1="${sx + m * sc}" y1="${sy - 4}" x2="${sx + m * sc}" y2="${sy + 1}"/><text x="${sx}" y="${sy - 7}">${m >= 1000 ? m / 1000 + "km" : m + "m"}</text></g>`;
+  svg += `<text class="north" x="${W - 22}" y="18">북 ↑</text></svg>`;
+  box.innerHTML = svg;
+  renderPlan(region);
+}
+
+function renderPlan(region) {
+  const A = route.a && byId(route.a), B = route.b && byId(route.b);
+  const el = $("#plan-box");
+  if (!A || A.region !== region) {
+    el.innerHTML = `<p class="lead">지도에서 1차로 갈 집을 누르면, 거기서 가까운 순으로 2차 후보를 보여 드려요.</p>`;
+    return;
+  }
+  const list = SHOPS.filter((s) => s.region === region && s.id !== A.id).map((s) => ({ s, d: dist(A, s) })).sort((x, y) => x.d - y.d);
+  let lead = `<p class="lead">출발 <b class="a">${esc(A.name)}</b> · ${esc(A.closeLabel)}</p>`;
+  if (B) {
+    const d = dist(A, B);
+    lead = `<p class="lead"><b class="a">${esc(A.name)}</b> → <b class="b">${esc(B.name)}</b><br>직선 ${distLabel(d)} · 걸어서 약 ${walkMin(d)}분 (직선거리로 어림). 도착지 마감 시간: ${esc(B.closeLabel.replace(/ 마감/, ""))}.</p>
+      <div class="plan-actions"><a class="btn go" href="${kakaoWalk(A, B)}" target="_blank" rel="noopener">카카오맵 도보 길찾기 ↗</a><button class="btn" type="button" data-swap>출발·도착 바꾸기</button><button class="btn" type="button" data-reset>지우기</button></div>`;
+  } else {
+    lead += `<div class="plan-actions"><button class="btn" type="button" data-go="${A.id}">카드 보기</button><button class="btn" type="button" data-reset>지우기</button></div>`;
+  }
+  el.innerHTML = lead + `<ul class="near">${list.map(({ s, d }) => `<li class="${route.b === s.id ? "on" : ""}"><span class="nm">${esc(s.short || s.name)}</span><span class="meta num">${distLabel(d)} · ${esc(s.closeLabel)}</span><button class="btn sm" type="button" data-pick="${s.id}" data-as="b">${route.b === s.id ? "도착" : "여기로"}</button></li>`).join("")}</ul>`;
+}
+
+function pick(id, asB) {
+  if (asB && route.a && route.a !== id) route.b = id;
+  else if (!route.a || route.b || route.a === id) { route.a = route.a === id && !route.b ? null : id; route.b = null; }
+  else route.b = id;
+  renderMap();
+}
+let rz;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(renderMap, 150); });
+document.addEventListener("keydown", (e) => {
+  const g = e.target.closest && e.target.closest("[data-pick]");
+  if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(+g.dataset.pick); }
 });
 
 function renderPicks() {
@@ -559,13 +778,12 @@ function renderChart() {
   $("#rows").innerHTML = sorted(SHOPS).map((c) => {
     const v = val(c);
     let w = 0, label;
-    if (ui.plan === "close") { w = ((v - 15) / (plan.max - 15)) * 100; label = hourLabel(v); }
-    else if (v != null) { w = (v / plan.max) * 100; label = won(v) + (isEst(c) ? "?" : ""); }
-    else label = "미확인";
+    if (v != null) { w = Math.min(100, plan.w(v) * 100); label = plan.fmt(v, c) + (isEst(c) ? "?" : ""); }
+    else label = plan.none || "미확인";
     return `<button class="row" type="button" data-go="${c.id}">
       <span class="name">${esc(c.short || c.name)}</span>
       <span class="track">${w ? `<span class="fill${isEst(c) ? " est" : ""}" style="width:${w}%"></span>` : ""}</span>
-      <span class="amt num${v == null ? " none" : ""}">${esc(label)}</span>
+      <span class="amt num${v == null || (ui.plan === "wait" && !v) ? " none" : ""}">${esc(label)}</span>
     </button>`;
   }).join("");
 }
@@ -594,10 +812,12 @@ function card(c) {
     <div class="price"><span class="kind">${esc(c.minLabel)}</span>${priceMain}<span class="sub num">${esc(range)}</span></div>
     ${c.minEst ? `<p class="note">"?"가 붙은 값은 메뉴판이 아니라 후기에 적힌 값이라 확실하지 않아요.</p>` : ""}
     <dl class="facts">
-      <div class="wide"><dt>교통</dt><dd>${esc(c.station)}</dd></div>
+      <div class="wide"><dt>교통</dt><dd>${esc(c.station).replace(/(도보 \d+분)/, `$1 (${c.meters}m)`)}</dd></div>
       <div><dt>전화</dt><dd class="num">${esc(c.phone)}</dd></div>
-      <div><dt>방문자 리뷰</dt><dd class="num">${c.reviews.toLocaleString("ko-KR")}개</dd></div>
       <div><dt>별점</dt><dd class="num">${c.rating != null ? c.rating.toFixed(2) : "비공개"}</dd></div>
+      <div><dt>방문자 리뷰</dt><dd class="num">${c.reviews.toLocaleString("ko-KR")}개</dd></div>
+      <div><dt>블로그 후기</dt><dd class="num">${c.blogs.toLocaleString("ko-KR")}개</dd></div>
+      <div class="wide"><dt>웨이팅 (후기 기준)</dt><dd>${WAIT_LABEL[c.waitLv]}</dd></div>
     </dl>
     <div class="sec"><h4>방어 메뉴 · 가격</h4><table class="fees num"><tbody>${c.menu.map((f) => `<tr class="${f[2] || ""}"><td>${esc(f[0])}${f[3] ? `<span class="d">${esc(f[3])}</span>` : ""}</td><td>${esc(won(f[1]))}</td></tr>`).join("")}</tbody></table></div>
     <div class="sec"><h4>영업시간</h4><table class="fees num"><tbody>${c.hours.map((h) => `<tr><td>${esc(h[0])}</td><td>${esc(h[1])}</td></tr>`).join("")}</tbody></table></div>
@@ -609,6 +829,7 @@ function card(c) {
       <ul class="con"><li class="h">아쉬운 점</li>${c.cons.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
     </div>
     <div class="verdict"><b>종합 평가</b>${esc(c.verdict)}</div>
+    <div class="nearby"><span>가까운 곳</span>${nearest(c, 2).map((n) => `<button type="button" data-go="${n.s.id}">${esc(n.s.short || n.s.name)} ${distLabel(n.d)}</button>`).join("")}<button type="button" data-route="${c.id}">지도에서 동선 보기</button></div>
     <div class="links"><a class="link" href="${c.url}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a></div>
   </div></article>`;
 }
@@ -620,6 +841,7 @@ function render() {
   $("#f-book").setAttribute("aria-pressed", String(ui.book));
   renderPicks();
   renderChart();
+  renderMap();
   const list = sorted(SHOPS.filter((c) => (ui.area === "전체" || c.area === ui.area) && (!ui.late || c.late) && (!ui.book || c.booking)));
   $("#grid").innerHTML = list.length ? list.map(card).join("") : `<div class="empty">조건에 맞는 식당이 없어요.</div>`;
   document.querySelectorAll("[data-gal]").forEach((g) => g.addEventListener("scroll", () => {
@@ -635,6 +857,19 @@ document.addEventListener("click", (e) => {
   if (pl) { ui.plan = pl.dataset.plan; saveUi(); render(); return; }
   if (e.target.closest("#f-late")) { ui.late = !ui.late; saveUi(); render(); return; }
   if (e.target.closest("#f-book")) { ui.book = !ui.book; saveUi(); render(); return; }
+  const rg = e.target.closest("[data-region]");
+  if (rg) { ui.region = rg.dataset.region; saveUi(); renderMap(); return; }
+  const pk = e.target.closest("[data-pick]");
+  if (pk) { pick(+pk.dataset.pick, pk.dataset.as === "b"); return; }
+  if (e.target.closest("[data-reset]")) { route.a = route.b = null; renderMap(); return; }
+  if (e.target.closest("[data-swap]")) { [route.a, route.b] = [route.b, route.a]; renderMap(); return; }
+  const rt = e.target.closest("[data-route]");
+  if (rt) {
+    const c = byId(+rt.dataset.route);
+    ui.region = c.region; saveUi(); route.a = c.id; route.b = null; renderMap();
+    document.querySelector(".mapbox").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    return;
+  }
   const go = e.target.closest("[data-go]");
   if (go) {
     const id = +go.dataset.go;
