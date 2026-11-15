@@ -3,6 +3,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
+/* 화면 색 전환 (자동 / 라이트 / 다크) */
+.topbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; margin-bottom: 6px; }
+.theme { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); padding: 2px; }
+.theme button { font: inherit; font-size: 12.5px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 4px 11px; border-radius: 99px; cursor: pointer; }
+.theme button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.theme button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Layout: 헤더 → 이런 날엔 여기(종합 평가) → 둘이서 방어 가격 막대(기준 전환) → 필터 → 식당 카드 (사진 · 방어 메뉴표 · 영업시간 · 예약/웨이팅 · 평판 · 종합 평가) */
 :root {
   --bg: #f2f5f7;
@@ -157,10 +163,23 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
+<script>
+// 화면 색: 저장해 둔 선택(라이트/다크)을 그리기 전에 먼저 적용해요. "자동"이면 폰 설정을 따라가요.
+(function () {
+  var m = null;
+  try { m = localStorage.getItem("tc-theme"); } catch (e) {}
+  if (m === "light" || m === "dark") document.documentElement.setAttribute("data-theme", m);
+})();
+</script>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">방어회 8곳 · 을지로 / 홍대·연남 / 합정·상수 / 망원</div>
+    <div class="topbar">
+      <div class="eyebrow">방어회 8곳 · 을지로 / 홍대·연남 / 합정·상수 / 망원</div>
+      <div class="theme" role="group" aria-label="화면 색">
+        <button type="button" data-theme-set="auto">자동</button><button type="button" data-theme-set="light">라이트</button><button type="button" data-theme-set="dark">다크</button>
+      </div>
+    </div>
     <h1>방어회 비교</h1>
     <p class="lede">찾아둔 방어회 집 8곳을 카드로 모았어요. 가격은 2026년 11월 14일 네이버 지도에 올라온 대방어 메뉴 기준이고, 평판은 네이버 방문자 리뷰 통계와 최근 후기를 정리했어요. 가게가 적지 않은 값은 지어내지 않고 <b>미확인</b>으로 두었어요.</p>
     <a class="nav" href="https://totocos-bara.github.io/ToonCafe/">← 만화카페 비교 보기</a>
@@ -547,4 +566,27 @@ openDb().then(async (d) => {
   try { (await tx("readonly", (s) => s.getAll())).forEach(addToMap); } catch (e) {}
   if (photos.size) render();
 }).catch(() => {});
+/* 화면 색 전환: 자동(폰 설정 따라감) / 라이트 / 다크. 두 페이지가 같은 선택을 공유해요. */
+(function () {
+  const KEY = "tc-theme";
+  const metas = [...document.querySelectorAll('meta[name="theme-color"]')].map((el) => ({ el, content: el.getAttribute("content") }));
+  const current = () => { try { const v = localStorage.getItem(KEY); return v === "light" || v === "dark" ? v : "auto"; } catch (e) { return "auto"; } };
+  function apply(mode) {
+    const root = document.documentElement;
+    if (mode === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", mode);
+    document.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeSet === mode)));
+    const bg = getComputedStyle(document.body).backgroundColor;
+    metas.forEach((m) => m.el.setAttribute("content", mode === "auto" ? m.content : bg));
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-theme-set]");
+    if (!b) return;
+    const mode = b.dataset.themeSet;
+    try { if (mode === "auto") localStorage.removeItem(KEY); else localStorage.setItem(KEY, mode); } catch (e2) {}
+    apply(mode);
+  });
+  const mode = current();
+  document.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeSet === mode)));
+  if (mode !== "auto") apply(mode);
+})();
 </script>
